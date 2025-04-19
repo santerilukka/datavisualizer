@@ -44,5 +44,5 @@ javafx {
 }
 
 application {
-    mainClass.set("org.App")
+    mainClass.set("datavisualizer.MainApp")
 }
