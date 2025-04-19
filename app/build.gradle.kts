@@ -40,7 +40,10 @@ java {
 
 javafx {
     version = "21.0.7"
-    modules = listOf("javafx.controls")
+    modules = listOf(
+        "javafx.controls",
+        "javafx.fxml"
+    )
 }
 
 application {
