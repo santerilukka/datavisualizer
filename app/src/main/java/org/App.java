@@ -1,4 +1,4 @@
-/*package org.example;
+package org;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -18,4 +18,4 @@ public class App extends Application {
     public static void main(String[] args) {
         launch(args);
     }
-}*/
+}

@@ -19,8 +19,8 @@ dependencies {
     implementation(libs.guava)
 
     // JavaFX dependencies
-    implementation("org.openjfx:javafx-controls:23:mac")
-    implementation("org.openjfx:javafx-fxml:23:mac")
+    implementation("org.openjfx:javafx-controls:21.0.7:mac")
+    implementation("org.openjfx:javafx-fxml:21.0.7:mac")
 }
 
 testing {
@@ -44,5 +44,5 @@ javafx {
 }
 
 application {
-    mainClass = "HelloFX"
+    mainClass.set("org.App")
 }
