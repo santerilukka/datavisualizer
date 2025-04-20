@@ -1,29 +1,35 @@
 package datavisualizer.model.dataset;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class DataSet {
-    private List<String> columns;
-    private List<Map<String, String>> rows;
-
-    public DataSet(List<String> columns, List<Map<String, String>> rows) {
-        this.columns = columns;
-        this.rows = rows;
+    private List<String> headers;
+    private List<Map<String, String>> data;
+    
+    public DataSet() {
+        this.headers = new ArrayList<>();
+        this.data = new ArrayList<>();
     }
-
-    public List<String> getColumns() {
-        return columns;
+    
+    public List<String> getHeaders() {
+        return headers;
     }
-
-    public List<Map<String, String>> getRows() {
-        return rows;
+    
+    public void setHeaders(List<String> headers) {
+        this.headers = headers;
     }
-
-    public void printPreview() {
-        System.out.println("Columns: " + columns);
-        for (int i = 0; i < Math.min(5, rows.size()); i++) {
-            System.out.println(rows.get(i));
-        }
+    
+    public List<Map<String, String>> getData() {
+        return data;
+    }
+    
+    public void addRow(Map<String, String> row) {
+        this.data.add(row);
+    }
+    
+    public int getRowCount() {
+        return data.size();
     }
 }
