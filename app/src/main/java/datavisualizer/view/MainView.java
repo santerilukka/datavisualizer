@@ -61,4 +61,12 @@ public class MainView {
     public Parent getRoot() {
         return root;
     }
+
+    public ChartView getChartView() {
+        return chartView;
+    }
+
+    public ColumnSelectionPanel getColumnSelectionPanel() {
+        return columnSelectionPanel;
+    }
 }

@@ -5,17 +5,24 @@ import datavisualizer.model.dataset.DataSet;
 import datavisualizer.model.command.ChangeChartTypeCommand;
 import datavisualizer.model.command.Command;
 import datavisualizer.model.chart.ChartFactory;
+import datavisualizer.model.chart.Chart;
+import datavisualizer.controller.CommandManager;
+import datavisualizer.model.command.Command;
+import datavisualizer.view.MainView;
 import datavisualizer.model.parser.CSVParser;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+
+import java.util.List;
 
 public class AppController {
     private DataSet currentDataSet;
     private CommandManager commandManager;
     private FileChooser fileChooser;
     private ChartType currentChartType = ChartType.BAR;
-    
+    private MainView mainView;
+
     public AppController() {
         commandManager = new CommandManager();
         fileChooser = new FileChooser();
@@ -23,33 +30,47 @@ public class AppController {
             new FileChooser.ExtensionFilter("CSV Files", "*.csv")
         );
     }
-    
+
     public void loadCSVFile() {
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {
             CSVParser parser = new CSVParser();
             currentDataSet = parser.parse(file);
-            // Notify observers that data has changed
+
+            if (currentDataSet != null) {
+                updateChartView();
+            }
         }
     }
-    
+
     public void setChartType(ChartType type) {
-        Command command = new ChangeChartTypeCommand(this, currentChartType, type);
-        commandManager.executeCommand(command);
-        currentChartType = type;
+        this.currentChartType = type;
+        updateChartView();
     }
-    
-    public void columnSelectionChanged(String columnName) {
-        // Handle column selection change
+
+    private void updateChartView() {
+        if (currentDataSet != null) {
+            Chart chart = ChartFactory.createChart(currentChartType, currentDataSet);
+            mainView.getChartView().displayChart(chart.render());
+        }
     }
-    
+
     public void undo() {
+    if (commandManager != null) {
         commandManager.undo();
     }
-    
-    public void redo() {
-        commandManager.redo();
     }
+
+    public void redo() {
+        if (commandManager != null) {
+            commandManager.redo();
+        }
+    }
+
+    public void columnSelectionChanged(String columnName) {
+    // Handle column selection logic here
+    System.out.println("Column selected: " + columnName);
+}
     
     // Other controller methods as needed
 }

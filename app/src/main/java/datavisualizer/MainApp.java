@@ -13,11 +13,10 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("DataVisualizerFX");
-        
-        // Initialize MVC components
-        appController = new AppController();
-        mainView = new MainView(appController);
-        
+
+        AppController appController = new AppController();
+        MainView mainView = new MainView(appController);
+
         Scene scene = new Scene(mainView.getRoot(), 800, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
