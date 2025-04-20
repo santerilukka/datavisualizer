@@ -1,4 +1,4 @@
-package datavisualizer.model.chart;
+ package datavisualizer.model;
 
 public enum ChartType {
     BAR, LINE
