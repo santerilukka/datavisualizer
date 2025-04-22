@@ -3,6 +3,7 @@ package datavisualizer.view;
 
 import datavisualizer.controller.AppController;
 import datavisualizer.model.dataset.DataSet;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -27,7 +28,7 @@ public class MainView {
         chartView = new ChartView();
         columnSelectionPanel = new ColumnSelectionPanel();
 
-        // Add stub views to the main pane (these will be replaced by FXML integration)
+        // Add the chart view to the center and column selection to the right
         mainPane.setCenter(chartView.getChartContainer());
         mainPane.setRight(columnSelectionPanel.getSelectionPanel());
     }
@@ -39,6 +40,58 @@ public class MainView {
      */
     public void setAppController(AppController appController) {
         this.appController = appController;
+        columnSelectionPanel.setAppController(appController); // Pass controller to column selection
+    }
+
+    /**
+     * Handles the action of opening a data file.
+     */
+    @FXML
+    private void openFile() {
+        if (appController != null) {
+            appController.openFile();
+        }
+    }
+
+    /**
+     * Handles the action of exiting the application.
+     */
+    @FXML
+    private void exitApplication() {
+        Platform.exit();
+    }
+
+    /**
+     * Handles the undo action.
+     */
+    @FXML
+    private void undoAction() {
+        if (appController != null) {
+            appController.getCommandManager().undo();
+        }
+    }
+
+    /**
+     * Handles the redo action.
+     */
+    @FXML
+    private void redoAction() {
+        if (appController != null) {
+            appController.getCommandManager().redo();
+        }
+    }
+
+    /**
+     * Shows the column selection panel.
+     */
+    @FXML
+    private void showColumnSelectionPanel() {
+        // You might want to control the visibility of the panel here
+        if (mainPane.getRight() == null) {
+            mainPane.setRight(columnSelectionPanel.getSelectionPanel());
+        } else {
+            mainPane.setRight(null); // Or some other way to hide it
+        }
     }
 
     /**

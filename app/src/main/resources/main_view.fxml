@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuItem?>
+
+<BorderPane fx:id="mainPane" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="datavisualizer.view.MainView">
+    <top>
+        <MenuBar>
+            <Menu text="File">
+                <MenuItem text="Open" onAction="#openFile"/>
+                <MenuItem text="Exit" onAction="#exitApplication"/>
+            </Menu>
+            <Menu text="Edit">
+                <MenuItem text="Undo" onAction="#undoAction"/>
+                <MenuItem text="Redo" onAction="#redoAction"/>
+            </Menu>
+            <Menu text="View">
+                <MenuItem text="Column Selection" onAction="#showColumnSelectionPanel"/>
+            </Menu>
+        </MenuBar>
+    </top>
+    </BorderPane>

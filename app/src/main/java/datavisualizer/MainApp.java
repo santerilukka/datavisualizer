@@ -1,8 +1,8 @@
 // DataVisualizerFX/src/main/java/datavisualizerfx/MainApp.java
 package datavisualizer;
 
-import datavisualizer.controller.AppController;
-
+import datavisualizer.controller.AppController; // Import AppController
+import datavisualizer.view.MainView; // Import MainView
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -16,7 +16,8 @@ import java.io.IOException;
  */
 public class MainApp extends Application {
 
-    private AppController appController;
+    private AppController appController; // Keep the AppController instance
+    private MainView mainView; // Add a MainView instance
 
     /**
      * Starts the JavaFX application.
@@ -27,9 +28,12 @@ public class MainApp extends Application {
      */
     @Override
     public void start(Stage primaryStage) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main_view.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/main_view.fxml"));
         Scene scene = new Scene(loader.load());
-        appController = loader.getController();
+        mainView = loader.getController(); // Get the MainView controller
+        appController = new AppController(); // Instantiate the AppController
+        mainView.setAppController(appController); // Set the AppController in MainView
+        appController.setMainView(mainView); // Set the MainView in AppController
         appController.setPrimaryStage(primaryStage);
 
         primaryStage.setTitle("DataVisualizerFX");
