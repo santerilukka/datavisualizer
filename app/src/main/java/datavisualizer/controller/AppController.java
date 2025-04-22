@@ -1,76 +1,109 @@
+// DataVisualizerFX/src/main/java/datavisualizerfx/controller/AppController.java
 package datavisualizer.controller;
 
-import datavisualizer.model.ChartType;
 import datavisualizer.model.dataset.DataSet;
-import datavisualizer.model.command.ChangeChartTypeCommand;
-import datavisualizer.model.command.Command;
-import datavisualizer.model.chart.ChartFactory;
-import datavisualizer.model.chart.Chart;
-import datavisualizer.controller.CommandManager;
-import datavisualizer.model.command.Command;
-import datavisualizer.view.MainView;
 import datavisualizer.model.parser.CSVParser;
+import datavisualizer.model.parser.DataParser;
+import datavisualizer.model.parser.JSONParser;
+import datavisualizer.view.MainView;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.IOException;
 
-import java.util.List;
-
+/**
+ * Controller for the main application window.
+ * Handles application-level actions such as opening files.
+ */
 public class AppController {
-    private DataSet currentDataSet;
-    private CommandManager commandManager;
-    private FileChooser fileChooser;
-    private ChartType currentChartType = ChartType.BAR;
+
     private MainView mainView;
+    private DataSet dataSet;
+    private final CommandManager commandManager = new CommandManager();
+    private Stage primaryStage;
 
-    public AppController() {
-        commandManager = new CommandManager();
-        fileChooser = new FileChooser();
-        fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("CSV Files", "*.csv")
-        );
+    /**
+     * Sets the primary stage of the application.
+     *
+     * @param primaryStage The primary stage.
+     */
+    public void setPrimaryStage(Stage primaryStage) {
+        this.primaryStage = primaryStage;
     }
 
-    public void loadCSVFile() {
-        File file = fileChooser.showOpenDialog(null);
-        if (file != null) {
-            CSVParser parser = new CSVParser();
-            currentDataSet = parser.parse(file);
+    /**
+     * Handles the action of opening a data file.
+     */
+    public void openFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Data File");
+        File selectedFile = fileChooser.showOpenDialog(primaryStage);
 
-            if (currentDataSet != null) {
-                updateChartView();
+        if (selectedFile != null) {
+            loadFile(selectedFile);
+        }
+    }
+
+    /**
+     * Loads data from the specified file.
+     * Determines the file type and uses the appropriate parser.
+     *
+     * @param file The file to load.
+     */
+    private void loadFile(File file) {
+        String fileName = file.getName().toLowerCase();
+        DataParser parser = null;
+
+        if (fileName.endsWith(".csv")) {
+            parser = new CSVParser();
+        } else if (fileName.endsWith(".json")) {
+            parser = new JSONParser();
+        }
+
+        if (parser != null) {
+            try {
+                dataSet = parser.parse(file);
+                // Notify the view to update with the new dataset
+                if (mainView != null) {
+                    mainView.displayDataSet(dataSet);
+                }
+            } catch (IOException e) {
+                // Handle file reading error
+                e.printStackTrace();
+                // Optionally, display an error message to the user
             }
+        } else {
+            // Handle unsupported file type
+            System.err.println("Unsupported file type: " + fileName);
+            // Optionally, display an error message to the user
         }
     }
 
-    public void setChartType(ChartType type) {
-        this.currentChartType = type;
-        updateChartView();
+    /**
+     * Sets the main view for this controller.
+     *
+     * @param mainView The main view instance.
+     */
+    public void setMainView(MainView mainView) {
+        this.mainView = mainView;
     }
 
-    private void updateChartView() {
-        if (currentDataSet != null) {
-            Chart chart = ChartFactory.createChart(currentChartType, currentDataSet);
-            mainView.getChartView().displayChart(chart.render());
-        }
+    /**
+     * Gets the command manager instance.
+     *
+     * @return The command manager.
+     */
+    public CommandManager getCommandManager() {
+        return commandManager;
     }
 
-    public void undo() {
-    if (commandManager != null) {
-        commandManager.undo();
+    /**
+     * Gets the current dataset.
+     *
+     * @return The current dataset.
+     */
+    public DataSet getDataSet() {
+        return dataSet;
     }
-    }
-
-    public void redo() {
-        if (commandManager != null) {
-            commandManager.redo();
-        }
-    }
-
-    public void columnSelectionChanged(String columnName) {
-    // Handle column selection logic here
-    System.out.println("Column selected: " + columnName);
-}
-    
-    // Other controller methods as needed
 }
