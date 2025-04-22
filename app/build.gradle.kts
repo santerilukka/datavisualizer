@@ -21,6 +21,8 @@ dependencies {
     // JavaFX dependencies
     implementation("org.openjfx:javafx-controls:21.0.7:mac")
     implementation("org.openjfx:javafx-fxml:21.0.7:mac")
+
+    implementation("com.google.code.gson:gson:2.10.1")
 }
 
 testing {
