@@ -36,7 +36,7 @@ public class MainApp extends Application {
         appController.setMainView(mainView); // Set the MainView in AppController
         appController.setPrimaryStage(primaryStage);
 
-        primaryStage.setTitle("DataVisualizerFX");
+        primaryStage.setTitle("DataVisualizer");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
