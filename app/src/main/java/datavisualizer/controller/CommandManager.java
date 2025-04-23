@@ -1,40 +1,53 @@
+// DataVisualizerFX/src/main/java/datavisualizerfx/controller/CommandManager.java
 package datavisualizer.controller;
 
 import datavisualizer.model.command.Command;
 
 import java.util.Stack;
 
+/**
+ * Manages the execution and undo/redo of commands.
+ */
 public class CommandManager {
-    private Stack<Command> undoStack = new Stack<>();
-    private Stack<Command> redoStack = new Stack<>();
-    
+
+    private final Stack<Command> history = new Stack<>();
+    private final Stack<Command> redoStack = new Stack<>();
+
+    /**
+     * Executes a command and adds it to the history.
+     * Clears the redo stack.
+     *
+     * @param command The command to execute.
+     */
     public void executeCommand(Command command) {
         command.execute();
-        undoStack.push(command);
-        redoStack.clear(); // Clear redo stack when new command is executed
+        history.push(command);
+        redoStack.clear();
     }
-    
+
+    /**
+     * Undoes the last executed command.
+     * If there are commands in the history, it pops the last one, undoes it,
+     * and pushes it onto the redo stack.
+     */
     public void undo() {
-        if (!undoStack.isEmpty()) {
-            Command command = undoStack.pop();
+        if (!history.isEmpty()) {
+            Command command = history.pop();
             command.undo();
             redoStack.push(command);
         }
     }
-    
+
+    /**
+     * Redoes the last undone command.
+     * If there are commands in the redo stack, it pops the last one, re-executes it,
+     * and pushes it back onto the history.
+     */
     public void redo() {
         if (!redoStack.isEmpty()) {
             Command command = redoStack.pop();
             command.execute();
-            undoStack.push(command);
+            history.push(command);
         }
-    }
-    
-    public boolean canUndo() {
-        return !undoStack.isEmpty();
-    }
-    
-    public boolean canRedo() {
-        return !redoStack.isEmpty();
     }
 }
