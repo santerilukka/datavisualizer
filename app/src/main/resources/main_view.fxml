@@ -21,4 +21,7 @@
             </Menu>
         </MenuBar>
     </top>
+   <right>
+        <fx:include fx:id="columnSelectionPanel" source="column_selection.fxml"/>
+    </right>
     </BorderPane>

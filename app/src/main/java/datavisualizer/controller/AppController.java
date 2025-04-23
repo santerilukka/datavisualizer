@@ -71,6 +71,7 @@ public class AppController {
             } catch (IOException e) {
                 // Handle file reading error
                 e.printStackTrace();
+                System.err.println("Error loading file: " + e.getMessage());
                 // Optionally, display an error message to the user
             }
         } else {
@@ -105,5 +106,14 @@ public class AppController {
      */
     public DataSet getDataSet() {
         return dataSet;
+    }
+
+    /**
+     * Gets the main view instance.
+     * 
+     * @return The main view.
+     */
+    public MainView getMainView() {
+        return mainView;
     }
 }
