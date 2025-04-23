@@ -1,25 +1,44 @@
+// DataVisualizerFX/src/main/java/datavisualizerfx/model/chart/BarChartData.java
 package datavisualizer.model.chart;
 
-import datavisualizer.model.dataset.DataSet;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.Node;
+import javafx.scene.chart.XYChart;
 
-public class BarChartData extends Chart {
-    public BarChartData(DataSet dataset) {
-        super(dataset);
+import java.util.List;
+
+/**
+ * Represents the data needed for a bar chart.
+ * This class might be used for more complex bar chart configurations in the future.
+ */
+public class BarChartData {
+    private String name;
+    private List<XYChart.Data<String, Number>> data;
+
+    /**
+     * Constructs a new BarChartData.
+     *
+     * @param name The name of the data series.
+     * @param data The list of data points.
+     */
+    public BarChartData(String name, List<XYChart.Data<String, Number>> data) {
+        this.name = name;
+        this.data = data;
     }
 
-    @Override
-    public Node render() {
-        CategoryAxis xAxis = new CategoryAxis();
-        NumberAxis yAxis = new NumberAxis();
-        BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
+    /**
+     * Gets the name of the data series.
+     *
+     * @return The name.
+     */
+    public String getName() {
+        return name;
+    }
 
-        // Populate chart with data from the dataset
-        // Example: Add series and data points here
-
-        return barChart;
+    /**
+     * Gets the list of data points.
+     *
+     * @return The list of data points.
+     */
+    public List<XYChart.Data<String, Number>> getData() {
+        return data;
     }
 }

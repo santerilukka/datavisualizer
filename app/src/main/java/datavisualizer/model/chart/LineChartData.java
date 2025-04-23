@@ -1,24 +1,44 @@
+// DataVisualizerFX/src/main/java/datavisualizerfx/model/chart/LineChartData.java
 package datavisualizer.model.chart;
 
-import datavisualizer.model.dataset.DataSet;
-import javafx.scene.Node;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 
-public class LineChartData extends Chart {
-    public LineChartData(DataSet dataSet) {
-        super(dataSet);
+import java.util.List;
+
+/**
+ * Represents the data needed for a line chart.
+ * This class might be used for more complex line chart configurations in the future.
+ */
+public class LineChartData {
+    private String name;
+    private List<XYChart.Data<String, Number>> data;
+
+    /**
+     * Constructs a new LineChartData.
+     *
+     * @param name The name of the data series.
+     * @param data The list of data points.
+     */
+    public LineChartData(String name, List<XYChart.Data<String, Number>> data) {
+        this.name = name;
+        this.data = data;
     }
-    
-    @Override
-    public Node render() {
-        NumberAxis xAxis = new NumberAxis();
-        NumberAxis yAxis = new NumberAxis();
-        LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
-        
-        // Add more implementation for populating the chart with dataSet
-        
-        return lineChart;
+
+    /**
+     * Gets the name of the data series.
+     *
+     * @return The name.
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Gets the list of data points.
+     *
+     * @return The list of data points.
+     */
+    public List<XYChart.Data<String, Number>> getData() {
+        return data;
     }
 }
