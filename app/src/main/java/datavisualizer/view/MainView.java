@@ -3,7 +3,7 @@ package datavisualizer.view;
 
 import datavisualizer.controller.AppController;
 import datavisualizer.model.dataset.DataSet;
-import datavisualizer.model.chart.ChartType; // Import ChartType
+import datavisualizer.model.chart.ChartType;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.layout.BorderPane;
@@ -36,9 +36,12 @@ public class MainView {
     @FXML
     public void initialize() {
         chartView = new ChartView();
-
-        // The FXML loader handles placing the included columnSelectionPanel
         mainPane.setCenter(chartView.getChartContainer());
+    
+        // Add this line to connect the ColumnSelectionPanel to the ChartView
+        if (columnSelectionPanelController != null) {
+            columnSelectionPanelController.setChartView(chartView);
+        }
     }
 
     /**
@@ -130,16 +133,10 @@ public class MainView {
             if (columnSelectionPanelController != null) {
                 columnSelectionPanelController.populateColumns(columnNames);
             }
-            // Initial chart display - let's default to a bar chart with the first column as X and subsequent as Y
-            if (!columnNames.isEmpty() && columnNames.size() > 1) {
-                chartView.updateChart(ChartType.BAR, columnNames.get(0), columnNames.subList(1, columnNames.size()));
-            } else if (!columnNames.isEmpty()) {
-                // Handle case with only one column (maybe display as a single series?)
-                chartView.updateChart(ChartType.BAR, columnNames.get(0), List.of());
-            } else {
-                // Handle empty dataset
-                chartView.clearChart(); // You might need a clearChart() method in ChartView
-            }
+            // Clear any existing chart and show a prompt or leave it empty
+            chartView.clearChart();
+            // Optionally, dispay a message to the chart area
+            //chartView.showMessage("Please select X and Y axes from the panel.");
         }
     }
 }

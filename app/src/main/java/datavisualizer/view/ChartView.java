@@ -127,4 +127,31 @@ public class ChartView {
     public void setAppController(AppController appController) {
         this.appController = appController;
     }
+    /**
+     * Gets the current chart type being displayed.
+     *
+     * @return The current ChartType, or null if no chart is displayed.
+     */
+    public ChartType getCurrentChartType() {
+        return currentChartType;
+    }
+
+    /**
+     * Gets the column currently used for the X-axis.
+     *
+     * @return The name of the X-axis column, or null if no chart is displayed.
+     */
+    public String getCurrentXColumn() {
+        return currentXColumn;
+    }
+
+    // You might also want a getter for Y columns, though the command now handles the list directly
+    /**
+     * Gets the list of columns currently used for the Y-axis.
+     *
+     * @return An immutable list of the Y-axis column names.
+     */
+    public List<String> getCurrentYColumns() {
+        return List.copyOf(currentYColumns); // Return an immutable copy
+    }
 }
