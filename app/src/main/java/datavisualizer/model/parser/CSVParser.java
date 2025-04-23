@@ -1,3 +1,4 @@
+// DataVisualizerFX/src/main/java/datavisualizerfx/model/parser/CSVParser.java
 package datavisualizer.model.parser;
 
 import datavisualizer.model.dataset.DataSet;
@@ -6,40 +7,48 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implementation of DataParser for parsing CSV files.
+ */
 public class CSVParser implements DataParser {
+
+    /**
+     * Parses a CSV file and returns a DataSet.
+     * Assumes the first row contains column headers.
+     *
+     * @param file The CSV file to parse.
+     * @return A DataSet containing the parsed data.
+     * @throws IOException If an error occurs during file reading.
+     */
     @Override
-    public DataSet parse(File file) {
-        DataSet dataSet = new DataSet();
-        
+    public DataSet parse(File file) throws IOException {
+        List<String> columnNames = new ArrayList<>();
+        List<Map<String, Object>> data = new ArrayList<>();
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            // Read headers
             String headerLine = reader.readLine();
             if (headerLine != null) {
-                List<String> headers = Arrays.asList(headerLine.split(","));
-                dataSet.setHeaders(headers);
-                
-                // Read data rows
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] values = line.split(",");
-                    Map<String, String> row = new HashMap<>();
-                    
-                    for (int i = 0; i < Math.min(headers.size(), values.length); i++) {
-                        row.put(headers.get(i), values[i]);
+                columnNames.addAll(Arrays.asList(headerLine.split(",")));
+            }
+
+            String dataLine;
+            while ((dataLine = reader.readLine()) != null) {
+                String[] values = dataLine.split(",");
+                if (values.length == columnNames.size()) {
+                    Map<String, Object> row = new HashMap<>();
+                    for (int i = 0; i < columnNames.size(); i++) {
+                        row.put(columnNames.get(i), values[i].trim());
                     }
-                    
-                    dataSet.addRow(row);
+                    data.add(row);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        
-        return dataSet;
+        return new DataSet(columnNames, data);
     }
 }
