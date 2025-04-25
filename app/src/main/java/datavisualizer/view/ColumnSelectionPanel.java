@@ -8,9 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Panel for selecting columns and chart type.
@@ -23,10 +21,13 @@ public class ColumnSelectionPanel {
     private ComboBox<String> xAxisComboBox;
     @FXML
     private ComboBox<String> yAxisComboBox;
-    @FXML
-    private VBox columnCheckboxes; // Container for Y-axis checkboxes
+    // @FXML private VBox columnCheckboxes; // No longer needed with ComboBox for Y
     @FXML
     private ComboBox<ChartType> chartTypeComboBox;
+    @FXML
+    private Label xAxisErrorLabel; // Injected error label for X-Axis
+    @FXML
+    private Label yAxisErrorLabel; // Injected error label for Y-Axis
 
     private AppController appController;
     private ChartView chartView; // Reference to the ChartView
@@ -41,11 +42,16 @@ public class ColumnSelectionPanel {
         chartTypeComboBox.setValue(ChartType.BAR); // Default selection
 
         // Add listeners to update the chart when selections change
+        // These will now also clear errors potentially
         xAxisComboBox.setOnAction(event -> updateChart());
-        chartTypeComboBox.setOnAction(event -> updateChart());
-        // Checkboxes will trigger update via the updateChart button or dynamically if preferred
-
         yAxisComboBox.setOnAction(event -> updateChart());
+        chartTypeComboBox.setOnAction(event -> updateChart());
+
+        // Ensure labels are initially hidden
+        xAxisErrorLabel.setVisible(false);
+        xAxisErrorLabel.setManaged(false);
+        yAxisErrorLabel.setVisible(false);
+        yAxisErrorLabel.setManaged(false);
     }
 
     /**
@@ -76,15 +82,18 @@ public class ColumnSelectionPanel {
         // Clear previous items
         xAxisComboBox.getItems().clear();
         yAxisComboBox.getItems().clear(); // Clear Y-axis combo box
-    
+
+        // Clear error labels when new data is loaded
+        clearErrorLabels();
+
         if (columnNames != null && !columnNames.isEmpty()) {
             // Populate X-Axis ComboBox
             xAxisComboBox.getItems().addAll(columnNames);
-            xAxisComboBox.setValue(columnNames.get(0)); // Default X to the first column
-    
             // Populate Y-Axis ComboBox
             yAxisComboBox.getItems().addAll(columnNames);
-            // Default Y to the second column if available, otherwise the first
+
+            // Set defaults: X = first column, Y = second (or first if only one)
+            xAxisComboBox.setValue(columnNames.get(0));
             if (columnNames.size() > 1) {
                 yAxisComboBox.setValue(columnNames.get(1));
             } else {
@@ -94,11 +103,9 @@ public class ColumnSelectionPanel {
              xAxisComboBox.setValue(null);
              yAxisComboBox.setValue(null);
         }
-        // Trigger an initial chart update based on default selections
+        // Trigger an initial chart update (or clear) based on default selections
         updateChart();
     }
-
-
     /**
      * Gets the root VBox node of this panel.
      *
@@ -108,72 +115,83 @@ public class ColumnSelectionPanel {
         return selectionPanel;
     }
 
+
     /**
      * Handles the action of updating the chart based on current selections.
      * This can be called by a button press or automatically on selection changes.
      */
     @FXML
     private void updateChart() {
+        // Clear previous errors first
+        clearErrorLabels();
+
         if (chartView != null && appController != null && appController.getDataSet() != null) {
             DataSet dataSet = appController.getDataSet();
             if (dataSet != null && !dataSet.getColumnNames().isEmpty()) {
                 String selectedXColumn = xAxisComboBox.getValue();
-                // Get selected Y column from the ComboBox
                 String selectedYColumn = yAxisComboBox.getValue();
                 ChartType selectedChartType = chartTypeComboBox.getValue();
 
-            // --- Validation ---
-            if (selectedXColumn == null) {
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Selection Missing");
-                alert.setHeaderText(null);
-                alert.setContentText("Please select a column for the X-Axis.");
-                alert.showAndWait();
-                return;
+                boolean valid = true;
+                if (selectedXColumn == null) {
+                    showError(xAxisErrorLabel, "Please select a column for the X-Axis.");
+                    valid = false;
+                }
+
+                if (selectedYColumn == null) {
+                    showError(yAxisErrorLabel, "Please select a column for the Y-Axis.");
+                    valid = false;
+                }
+
+                // Only check for equality if both are selected
+                if (selectedXColumn != null && selectedYColumn != null && selectedYColumn.equals(selectedXColumn)) {
+                    showError(yAxisErrorLabel, "X and Y axes cannot be the same.");
+                    valid = false;
+                }
+
+                if (!valid) {
+                    // If validation fails, clear the chart (optional, prevents showing stale chart)
+                    chartView.clearChart();
+                    return; // Stop processing
+                }
+
+                // Create a list containing the single selected Y column
+                List<String> selectedYColumns = List.of(selectedYColumn);
+
+                // Update the chart view
+                // TODO: Wrap this in a command for Undo/Redo
+                chartView.updateChart(selectedChartType, selectedXColumn, selectedYColumns);
+
+            } else {
+                 // Data loaded but no columns? Clear chart.
+                 chartView.clearChart();
             }
-
-            if (selectedYColumn == null) { // Check Y-axis selection
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Selection Missing");
-                alert.setHeaderText(null);
-                alert.setContentText("Please select a column for the Y-Axis.");
-                alert.showAndWait();
-                return;
-           }
-            if (selectedYColumn.equals(selectedXColumn)) { // Compare single Y column
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Invalid Selection");
-                alert.setHeaderText(null);
-                alert.setContentText("The X-Axis and Y-Axis columns cannot be the same.");
-                alert.showAndWait();
-                return;
-           }
-            // --- End Validation ---
-
-
-            // Create a list containing the single selected Y column
-            List<String> selectedYColumns = List.of(selectedYColumn);
-
-            // Update the chart view
-            chartView.updateChart(selectedChartType, selectedXColumn, selectedYColumns);
-
-            // TODO: Undo/Redo is needed for this action, wrap the updateChart call
-            // in a command and execute it via commandManager.
-
-
-        } // This closing brace was missing for the inner if (dataSet != null...)
-    } else {
-        // This else corresponds to the outer if (chartView != null...)
-        // It might be better to disable controls until data is loaded instead of showing this repeatedly.
-        /*
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("No Data Loaded");
-        alert.setHeaderText(null);
-        alert.setContentText("Please open a data file first.");
-        alert.showAndWait();
-         */
+        } else {
+            // No data loaded or chartView not set, ensure chart is clear
+            if (chartView != null) {
+                chartView.clearChart();
+            }
+            // Optionally show a persistent message if needed, but avoid alerts here.
+        }
     }
-}
+
+    // Helper method to show an error label
+    private void showError(Label label, String message) {
+        label.setText(message);
+        label.setVisible(true);
+        label.setManaged(true);
+    }
+
+    // Helper method to clear error labels
+    private void clearErrorLabels() {
+        xAxisErrorLabel.setText("");
+        xAxisErrorLabel.setVisible(false);
+        xAxisErrorLabel.setManaged(false);
+        yAxisErrorLabel.setText("");
+        yAxisErrorLabel.setVisible(false);
+        yAxisErrorLabel.setManaged(false);
+    }
+
 
      /**
      * Gets the currently selected X-axis column.
@@ -185,6 +203,16 @@ public class ColumnSelectionPanel {
     }
 
     /**
+     * Gets the currently selected Y-axis column.
+     *
+     * @return The name of the selected Y-axis column, or null if none selected.
+     */
+    public String getSelectedYAxisColumn() {
+        return yAxisComboBox.getValue();
+    }
+
+
+    /**
      * Gets the currently selected chart type.
      *
      * @return The selected ChartType, or null if none selected.
@@ -192,5 +220,4 @@ public class ColumnSelectionPanel {
     public ChartType getSelectedChartType() {
         return chartTypeComboBox.getValue();
     }
-
 }
