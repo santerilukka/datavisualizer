@@ -29,7 +29,8 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/main_view.fxml"));
-        Scene scene = new Scene(loader.load());
+        javafx.scene.Parent root = loader.load();
+        Scene scene = new Scene(root, 1024, 640);
         mainView = loader.getController(); // Get the MainView controller
         appController = new AppController(); // Instantiate the AppController
         mainView.setAppController(appController); // Set the AppController in MainView
