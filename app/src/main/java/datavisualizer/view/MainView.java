@@ -3,7 +3,6 @@ package datavisualizer.view;
 
 import datavisualizer.controller.AppController;
 import datavisualizer.model.dataset.DataSet;
-import datavisualizer.model.chart.ChartType;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -75,6 +74,16 @@ public class MainView {
     private void openFile() {
         if (appController != null) {
             appController.openFile();
+        }
+    }
+
+    /**
+     * Handles the action of closing the current data file.
+     */
+    @FXML
+    private void closeFile() {
+        if (appController != null) {
+            appController.closeCurrentFile();
         }
     }
 
@@ -151,13 +160,15 @@ public class MainView {
             chartView.clearChart();
 
         } else {
-            // Data loading failed or was cancelled, ensure start screen is shown
+            // Data loading failed or was cancelled, show start screen
             mainPane.setCenter(startScreen); // Switch back to start screen
             if (columnSelectionPanelController != null) {
-                 // Clear column selections if data load fails
                 columnSelectionPanelController.populateColumns(null);
             }
-            chartView.clearChart(); // Also clear the chart view
+            // Also clear the chart view state if going back to start screen
+            if (chartView != null) {
+                chartView.clearChart();
+            }
         }
     }
 

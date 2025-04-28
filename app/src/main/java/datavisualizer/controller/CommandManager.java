@@ -50,4 +50,13 @@ public class CommandManager {
             history.push(command);
         }
     }
+
+    /**
+     * Clears both the history and redo stacks.
+     * Useful when loading new data or closing a file.
+     */
+    public void clearHistory() {
+        history.clear();
+        redoStack.clear();
+    }
 }

@@ -47,6 +47,27 @@ public class AppController {
     }
 
     /**
+     * Closes the currently open file, clearing the dataset and resetting the view.
+     */
+    public void closeCurrentFile() {
+        this.dataSet = null; // Clear the dataset
+
+        // Notify the view to reset to the start screen state
+        if (mainView != null) {
+            mainView.displayDataSet(null);
+        }
+
+        // Clear the undo/redo history
+        commandManager.clearHistory();
+
+        // Reset the window title
+        if (primaryStage != null) {
+            primaryStage.setTitle("DataVisualizer");
+        }
+        System.out.println("File closed."); // Optional logging
+    }
+
+    /**
      * Sets the main view for this controller.
      *
      * @param mainView The main view instance.

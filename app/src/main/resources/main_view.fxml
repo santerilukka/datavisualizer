@@ -10,6 +10,7 @@
         <MenuBar>
             <Menu text="File">
                 <MenuItem text="Open" onAction="#openFile"/>
+                <MenuItem text="Close" onAction="#closeFile"/>
                 <MenuItem text="Exit" onAction="#exitApplication"/>
             </Menu>
             <Menu text="Edit">
