@@ -1,15 +1,19 @@
 package datavisualizer.model.chart;
 
 import datavisualizer.model.dataset.DataSet;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.Chart;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Factory class for creating different types of charts.
@@ -31,6 +35,8 @@ public class ChartFactory {
                 return createBarChart(dataSet, xColumn, yColumns);
             case LINE:
                 return createLineChart(dataSet, xColumn, yColumns);
+            case PIE:
+                return createPieChart(dataSet, xColumn, yColumns.get(0));
             default:
                 return null;
         }
@@ -115,5 +121,64 @@ public class ChartFactory {
     lineChart.setCreateSymbols(true); // Show symbols on data points
 
     return lineChart;
+    }
+
+    /**
+     * Creates a PieChart based on the DataSet.
+     *
+     * @param dataSet  The dataset to visualize.
+     * @param labelColumn The column containing the labels for the pie slices.
+     * @param valueColumn The column containing the numeric values for the pie slices.
+     * @return A configured PieChart, or null if data is unsuitable.
+     */
+    private static PieChart createPieChart(DataSet dataSet, String labelColumn, String valueColumn) {
+        ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList();
+        List<Object> labelData = dataSet.getColumnData(labelColumn);
+        List<Object> valueData = dataSet.getColumnData(valueColumn);
+
+        // Aggregate values for duplicate labels
+        Map<String, Double> aggregatedData = new LinkedHashMap<>();
+        for (int i = 0; i < labelData.size(); i++) {
+            if (i < valueData.size()) { // Ensure valueData has a corresponding value
+                 String label = labelData.get(i) != null ? labelData.get(i).toString() : "N/A";
+                 try {
+                    double value = Double.parseDouble(valueData.get(i).toString());
+                    if (value >= 0) { // Pie slices typically represent non-negative values
+                         aggregatedData.merge(label, value, Double::sum);
+                    } else {
+                         System.err.println("Skipping negative value in PieChart for label " + label + ": " + value);
+                    }
+                 } catch (NumberFormatException | NullPointerException e) {
+                     System.err.println("Skipping non-numeric/null value in PieChart for label " + label + ": " + valueData.get(i));
+                 }
+            }
+        }
+
+        // Add aggregated data to the PieChart data list and format the label to include the value
+        final AtomicReference<Double> total = new AtomicReference<>(0.0); // Use AtomicReference for modification within lambda/stream
+        aggregatedData.values().forEach(val -> total.updateAndGet(v -> v + val)); // Calculate total for percentage calculation
+
+        for (Map.Entry<String, Double> entry : aggregatedData.entrySet()) {
+             // Format the label string to include the category name and its percentage
+             double percentage = (total.get() == 0) ? 0 : (entry.getValue() / total.get()) * 100;
+             String labelWithValue = String.format("%s (%.1f%%)", entry.getKey(), percentage);
+
+             PieChart.Data slice = new PieChart.Data(labelWithValue, entry.getValue());
+             pieChartData.add(slice);
+        }
+
+
+        if (pieChartData.isEmpty()) {
+            // Return null or an empty chart if no valid data was found
+            return null;
+        }
+
+        PieChart pieChart = new PieChart(pieChartData);
+        pieChart.setTitle("Pie Chart: " + valueColumn + " by " + labelColumn);
+
+        // Ensure labels are visible to show the names (which now include values/percentages)
+        pieChart.setLabelsVisible(true);
+
+        return pieChart;
     }
 }
