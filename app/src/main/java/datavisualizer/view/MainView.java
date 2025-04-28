@@ -6,6 +6,10 @@ import datavisualizer.model.dataset.DataSet;
 import datavisualizer.model.chart.ChartType;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
@@ -29,16 +33,23 @@ public class MainView {
     private ChartView chartView;
     private AppController appController;
     private DataSet currentDataSet; // To hold the currently loaded dataset
+    private VBox startScreen;
 
     /**
      * Initializes the main view. This method is automatically called after the FXML file has been loaded.
      */
     @FXML
     public void initialize() {
+        // Initialize ChartView but don't add it to the center yet
         chartView = new ChartView();
-        mainPane.setCenter(chartView.getChartContainer());
-    
-        // Add this line to connect the ColumnSelectionPanel to the ChartView
+
+        // Create the start screen using the helper method
+        startScreen = createStartScreen();
+
+        // Set the start screen as the initial center content
+        mainPane.setCenter(startScreen);
+
+        // Connect ColumnSelectionPanel to ChartView (needed later)
         if (columnSelectionPanelController != null) {
             columnSelectionPanelController.setChartView(chartView);
         }
@@ -129,14 +140,48 @@ public class MainView {
     public void displayDataSet(DataSet dataSet) {
         this.currentDataSet = dataSet;
         if (dataSet != null) {
+            // Data loaded successfully, show the chart view
+            mainPane.setCenter(chartView.getChartContainer()); // Switch center to chart view
+
             List<String> columnNames = dataSet.getColumnNames();
             if (columnSelectionPanelController != null) {
                 columnSelectionPanelController.populateColumns(columnNames);
             }
-            // Clear any existing chart and show a prompt or leave it empty
+            // Clear any existing chart before new selections are made
             chartView.clearChart();
-            // Optionally, dispay a message to the chart area
-            //chartView.showMessage("Please select X and Y axes from the panel.");
+
+        } else {
+            // Data loading failed or was cancelled, ensure start screen is shown
+            mainPane.setCenter(startScreen); // Switch back to start screen
+            if (columnSelectionPanelController != null) {
+                 // Clear column selections if data load fails
+                columnSelectionPanelController.populateColumns(null);
+            }
+            chartView.clearChart(); // Also clear the chart view
         }
+    }
+
+    /**
+     * Creates and configures the VBox used as the start screen.
+     *
+     * @return The configured VBox for the start screen.
+     */
+    private VBox createStartScreen() {
+        VBox screen = new VBox(20); // VBox with spacing
+        screen.setAlignment(Pos.CENTER);
+        screen.setPadding(new Insets(20));
+
+        Label welcomeLabel = new Label("Welcome to DataVisualizer!");
+        welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+
+        Label instructionLabel = new Label("Open a CSV or JSON data file to start");
+        instructionLabel.setWrapText(true);
+        instructionLabel.setAlignment(Pos.CENTER);
+
+        Button openFileButton = new Button("Open Data File");
+        openFileButton.setOnAction(event -> openFile()); // Reuse the existing openFile method
+
+        screen.getChildren().addAll(welcomeLabel, instructionLabel, openFileButton);
+        return screen;
     }
 }
