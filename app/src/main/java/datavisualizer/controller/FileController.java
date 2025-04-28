@@ -47,6 +47,7 @@ public class FileController {
         File selectedFile = fileChooser.showOpenDialog(primaryStage);
 
         if (selectedFile != null) {
+            primaryStage.setTitle("DataVisualizer - " + selectedFile.getName());
             String fileExtension = FileUtils.getFileExtension(selectedFile);
             DataParser parser = null;
 
