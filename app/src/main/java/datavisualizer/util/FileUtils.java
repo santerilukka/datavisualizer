@@ -1,4 +1,3 @@
-// DataVisualizerFX/src/main/java/datavisualizerfx/util/FileUtils.java
 package datavisualizer.util;
 
 import java.io.File;
