@@ -1,4 +1,3 @@
-// DataVisualizerFX/src/main/java/datavisualizer/view/ColumnSelectionPanel.java
 package datavisualizer.view;
 
 import datavisualizer.controller.AppController;
@@ -21,13 +20,14 @@ public class ColumnSelectionPanel {
     private ComboBox<String> xAxisComboBox;
     @FXML
     private ComboBox<String> yAxisComboBox;
-    // @FXML private VBox columnCheckboxes; // No longer needed with ComboBox for Y
     @FXML
     private ComboBox<ChartType> chartTypeComboBox;
     @FXML
     private Label xAxisErrorLabel; // Injected error label for X-Axis
     @FXML
     private Label yAxisErrorLabel; // Injected error label for Y-Axis
+    @FXML
+    private Button swapAxesButton; // Button to swap axes
 
     private AppController appController;
     private ChartView chartView; // Reference to the ChartView
@@ -220,4 +220,48 @@ public class ColumnSelectionPanel {
     public ChartType getSelectedChartType() {
         return chartTypeComboBox.getValue();
     }
+
+    /**
+     * Handles the action of swapping the selected X and Y axes.
+     */
+    @FXML
+    private void swapAxes() {
+    // Clear previous errors first, especially if swap failed before
+    clearErrorLabels();
+
+    String currentX = xAxisComboBox.getValue();
+    String currentY = yAxisComboBox.getValue();
+
+    // Check if both are selected
+    if (currentX == null || currentY == null) {
+        String errorMsg = "Select both X and Y axes to swap.";
+        if (currentX == null) {
+            showError(xAxisErrorLabel, errorMsg);
+        }
+        if (currentY == null) {
+            showError(yAxisErrorLabel, errorMsg);
+        }
+        return; // Stop processing
+    }
+
+    // Check if they are different (updateChart will handle the error if they are the same)
+    if (!currentX.equals(currentY)) {
+        // Temporarily disable listeners to prevent multiple updates
+        xAxisComboBox.setOnAction(null);
+        yAxisComboBox.setOnAction(null);
+
+        xAxisComboBox.setValue(currentY);
+        yAxisComboBox.setValue(currentX);
+
+        // Re-enable listeners
+        xAxisComboBox.setOnAction(event -> updateChart());
+        yAxisComboBox.setOnAction(event -> updateChart());
+
+        // Trigger the chart update after swapping
+        updateChart();
+    } else {
+        // If they are the same, let updateChart show the specific error
+        updateChart();
+    }
+}
 }
