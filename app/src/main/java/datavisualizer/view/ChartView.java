@@ -21,158 +21,83 @@ import java.util.List;
  * This will contain a JavaFX Chart object.
  */
 public class ChartView {
-
     private BorderPane chartContainer;
     private Chart currentChart;
     private String currentXColumn;
     private List<String> currentYColumns = new ArrayList<>();
     private ChartType currentChartType;
-    private AppController appController;
-    private Node selectionPromptNode; // Node to show when no chart is displayed
 
-    /**
-     * Constructs a new ChartView.
-     */
+    private AppController appController;
+    private Node selectionPromptNode;
+
     public ChartView() {
         chartContainer = new BorderPane();
-        selectionPromptNode = createSelectionPromptNode(); // Create the prompt
-        clearChart(); // Initialize with the prompt visible
+        selectionPromptNode = createSelectionPromptNode();
+        clearChart();
     }
 
-    /**
-     * Gets the container for the chart.
-     *
-     * @return The BorderPane that holds the chart.
-     */
     public BorderPane getChartContainer() {
         return chartContainer;
     }
 
     /**
-     * Updates the displayed chart with the new type and data.
+     * Updates the displayed chart based on the state provided by the controller.
      *
-     * @param chartType The new type of chart to display.
+     * @param chartType The type of chart to display.
      * @param xColumn   The column to use for the X-axis.
      * @param yColumns  The columns to use for the Y-axis.
      */
     public void updateChart(ChartType chartType, String xColumn, List<String> yColumns) {
-        // Check if essential components are available
+        // Check if essential components are available (controller for data)
         if (appController == null || appController.getDataSet() == null) {
-            System.err.println("Cannot update chart: AppController or DataSet is null.");
-            clearChart(); // Show prompt if data/controller isn't ready
+            System.err.println("ChartView: Cannot update chart: AppController or DataSet is null.");
+            clearChart();
             return;
         }
-
         DataSet dataSet = appController.getDataSet();
 
-        // Check if columns are selected (handle single Y-column case)
-        if (xColumn == null || yColumns == null || yColumns.isEmpty()) {
-             // If only X is selected, or Y is missing, we might still want to clear or show prompt
-             // Depending on desired behavior for incomplete selections. Let's clear for now.
-            clearChart(); // Show prompt if axes are not fully selected
+        // Check if columns are provided (basic check, controller should validate more)
+        if (xColumn == null || yColumns == null /* Allow empty yColumns for some chart types? */ ) {
+             System.err.println("ChartView: Cannot update chart: Columns not specified.");
+             clearChart();
             return;
         }
 
-        // Attempt to create the chart
+        // Attempt to create the chart using the provided state
         Chart newChart = ChartFactory.createChart(chartType, dataSet, xColumn, yColumns);
 
         if (newChart != null) {
             // Chart created successfully, display it
             chartContainer.setCenter(newChart);
-            currentChart = newChart;
-            currentXColumn = xColumn;
-            currentYColumns = new ArrayList<>(yColumns); // Store a mutable copy
-            currentChartType = chartType;
+            // Update internal fields mainly for getter consistency if needed
+            this.currentChart = newChart;
+            this.currentXColumn = xColumn;
+            this.currentYColumns = new ArrayList<>(yColumns); // Store a mutable copy
+            this.currentChartType = chartType;
         } else {
-            // Chart creation failed (e.g., unsupported type, bad data for type)
-            System.err.println("Failed to create chart. Type: " + chartType + ", X: " + xColumn + ", Y: " + yColumns);
+            // Chart creation failed
+            System.err.println("ChartView: Failed to create chart. Type: " + chartType + ", X: " + xColumn + ", Y: " + yColumns);
             clearChart(); // Show prompt if chart creation fails
         }
     }
 
-    /**
-     * Hides the specified columns from the current chart.
-     *
-     * @param columnsToHide The names of the columns to hide.
-     */
-    public void hideColumns(List<String> columnsToHide) {
-        if (currentChart != null) {
-            List<String> updatedYColumns = currentYColumns.stream()
-                    .filter(col -> !columnsToHide.contains(col))
-                    .toList();
-            updateChart(currentChartType, currentXColumn, updatedYColumns);
-        }
-    }
-
-    /**
-     * Shows the specified columns that were previously hidden.
-     *
-     * @param columnsToShow The names of the columns to show.
-     */
-    public void showColumns(List<String> columnsToShow) {
-        if (currentChart != null) {
-            List<String> updatedYColumns = new ArrayList<>(currentYColumns);
-            for (String col : columnsToShow) {
-                if (appController.getDataSet().getColumnNames().contains(col) && !updatedYColumns.contains(col)) {
-                    updatedYColumns.add(col);
-                }
-            }
-            updateChart(currentChartType, currentXColumn, updatedYColumns);
-        }
-    }
-
-    /**
-     * Clears the chart display and shows the selection prompt.
-     */
     public void clearChart() {
-        chartContainer.setCenter(selectionPromptNode); // Show user prompt node
+        chartContainer.setCenter(selectionPromptNode);
+        // Clear internal tracking fields
         currentChart = null;
         currentXColumn = null;
         currentYColumns.clear();
         currentChartType = null;
     }
 
-    /**
-     * Sets the application controller for this view.
-     *
-     * @param appController The application controller.
-     */
     public void setAppController(AppController appController) {
         this.appController = appController;
     }
-    /**
-     * Gets the current chart type being displayed.
-     *
-     * @return The current ChartType, or null if no chart is displayed.
-     */
-    public ChartType getCurrentChartType() {
-        return currentChartType;
-    }
 
-    /**
-     * Gets the column currently used for the X-axis.
-     *
-     * @return The name of the X-axis column, or null if no chart is displayed.
-     */
-    public String getCurrentXColumn() {
-        return currentXColumn;
-    }
+    public ChartType getCurrentChartType() { return currentChartType; }
+    public String getCurrentXColumn() { return currentXColumn; }
+    public List<String> getCurrentYColumns() { return List.copyOf(currentYColumns); }
 
-    // You might also want a getter for Y columns, though the command now handles the list directly
-    /**
-     * Gets the list of columns currently used for the Y-axis.
-     *
-     * @return An immutable list of the Y-axis column names.
-     */
-    public List<String> getCurrentYColumns() {
-        return List.copyOf(currentYColumns); // Return an immutable copy
-    }
-
-    /**
-     * Creates the Node used as a prompt when no chart is selected.
-     *
-     * @return The configured Node for the prompt.
-     */
     private Node createSelectionPromptNode() {
         VBox promptBox = new VBox(10);
         promptBox.setAlignment(Pos.CENTER);
