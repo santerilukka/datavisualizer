@@ -15,6 +15,8 @@ public class ChartStateModel {
     private String xColumn = null;
     private List<String> yColumns = new ArrayList<>();
 
+    private final List<ChartStateObserver> observers = new ArrayList<>();
+
     /**
      * Gets the currently selected chart type.
      *
@@ -54,11 +56,8 @@ public class ChartStateModel {
     public void updateState(ChartType type, String xCol, String yCol) {
         this.chartType = (type != null) ? type : ChartType.BAR; // Default if null
         this.xColumn = xCol;
-        // Assuming single Y column selection for now, matching AppController logic
         this.yColumns = (yCol != null) ? new ArrayList<>(List.of(yCol)) : new ArrayList<>();
-
-        // TODO: Implement notification mechanism (e.g., PropertyChangeSupport or JavaFX Properties)
-        // if observers need to react to state changes.
+        notifyObservers(); // Add this call
     }
 
      /**
@@ -72,8 +71,7 @@ public class ChartStateModel {
         this.chartType = (type != null) ? type : ChartType.BAR; // Default if null
         this.xColumn = xCol;
         this.yColumns = (yCols != null) ? new ArrayList<>(yCols) : new ArrayList<>();
-
-        // TODO: Implement notification mechanism
+        notifyObservers();
     }
 
 
@@ -85,5 +83,22 @@ public class ChartStateModel {
         this.xColumn = null;
         this.yColumns.clear();
         // TODO: Notify observers if implemented
+    }
+
+    public void addObserver(ChartStateObserver observer) {
+        if (observer != null && !observers.contains(observer)) {
+            observers.add(observer);
+        }
+    }
+
+    public void removeObserver(ChartStateObserver observer) {
+        observers.remove(observer);
+    }
+
+    private void notifyObservers() {
+        // Use a copy to avoid ConcurrentModificationException if observer tries to unregister during notification
+        for (ChartStateObserver observer : new ArrayList<>(observers)) {
+            observer.chartStateChanged();
+        }
     }
 }

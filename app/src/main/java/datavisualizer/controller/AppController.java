@@ -2,11 +2,13 @@ package datavisualizer.controller;
 
 import datavisualizer.model.dataset.DataSet;
 import datavisualizer.model.chart.ChartType;
-import datavisualizer.model.ChartStateModel; // Import the new model
+import datavisualizer.model.ChartStateModel;
+import datavisualizer.model.ChartStateObserver;
 import datavisualizer.view.MainView;
 import datavisualizer.view.ColumnSelectionPanel;
 import datavisualizer.view.ErrorDisplayView;
 import datavisualizer.model.command.Command;
+import datavisualizer.model.command.UpdateChartStateCommand;
 
 import javafx.stage.Stage;
 
@@ -19,16 +21,18 @@ import java.util.Collections;
  * Controller for the main application window.
  * Handles application-level actions
  */
-public class AppController {
+public class AppController implements ChartStateObserver {
     private MainView mainView;
     private DataSet dataSet;
     private Stage primaryStage;
 
     private final CommandManager commandManager = new CommandManager();
     private final FileController fileController = new FileController();
-    private final ChartStateModel chartStateModel = new ChartStateModel(); // Add instance of the new model
+    private final ChartStateModel chartStateModel = new ChartStateModel();
 
-    // --- Chart State Fields removed ---
+    public AppController() {
+        chartStateModel.addObserver(this); // Register as observer
+    }
 
     /**
      * Sets the primary stage of the application.
@@ -107,6 +111,11 @@ public class AppController {
                  mainView.getColumnSelectionPanel().setAppController(this); // Panel needs it for callbacks
             }
         }
+    }
+
+    @Override
+    public void chartStateChanged() {
+        triggerChartViewUpdate();
     }
 
     /**
@@ -223,7 +232,6 @@ public class AppController {
              // Create a command that operates on the ChartStateModel
              Command updateCmd = new UpdateChartStateCommand(
                  chartStateModel, // Pass the model
-                 this, // Pass controller for triggering view update
                  previousType, previousX, previousY, // Previous state
                  requestedType, requestedXCol, requestedYList // New state
              );
@@ -261,40 +269,5 @@ public class AppController {
         // Request an update using the validated panel selections, but swapped, keeping current type
         // This will go through the command creation process in requestChartUpdate
         requestChartUpdate(currentType, panelY, panelX);
-    }
-
-
-    // --- Command Implementation (Now operates on ChartStateModel) ---
-    private static class UpdateChartStateCommand implements Command {
-        private final ChartStateModel model; // Reference to the model
-        private final AppController controller; // Reference to controller to trigger view updates
-        private final ChartType prevType, newType;
-        private final String prevX, newX;
-        private final List<String> prevY, newY;
-
-        public UpdateChartStateCommand(ChartStateModel model, AppController controller,
-                                       ChartType prevType, String prevX, List<String> prevY,
-                                       ChartType newType, String newX, List<String> newY) {
-            this.model = model;
-            this.controller = controller;
-            this.prevType = prevType; this.prevX = prevX; this.prevY = new ArrayList<>(prevY); // Store copy
-            this.newType = newType; this.newX = newX; this.newY = new ArrayList<>(newY); // Store copy
-        }
-
-        @Override
-        public void execute() {
-            // Update the model state
-            model.updateState(newType, newX, newY);
-            // Tell controller to refresh the view based on the *new* model state
-            controller.triggerChartViewUpdate();
-        }
-
-        @Override
-        public void undo() {
-             // Revert the model state
-            model.updateState(prevType, prevX, prevY);
-            // Tell controller to refresh the view based on the *reverted* model state
-            controller.triggerChartViewUpdate();
-        }
     }
 }
