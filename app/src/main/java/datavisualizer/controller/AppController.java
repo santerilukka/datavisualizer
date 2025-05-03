@@ -1,8 +1,15 @@
 package datavisualizer.controller;
+
 import datavisualizer.model.dataset.DataSet;
+import datavisualizer.model.chart.ChartType;
 import datavisualizer.view.MainView;
+import datavisualizer.view.ColumnSelectionPanel;
+import datavisualizer.view.ErrorDisplayView;
 
 import javafx.stage.Stage;
+
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Controller for the main application window.
@@ -101,5 +108,114 @@ public class AppController {
      */
     public MainView getMainView() {
         return mainView;
+    }
+
+    /**
+     * Requests an update to the chart based on selections from the panel.
+     * Performs validation before updating the view.
+     *
+     * @param type The selected chart type.
+     * @param xCol The selected X-axis column.
+     * @param yCol The selected Y-axis column.
+     */
+    public void requestChartUpdate(ChartType type, String xCol, String yCol) {
+        if (mainView == null || mainView.getChartView() == null || mainView.getColumnSelectionPanel() == null) {
+            System.err.println("Cannot update chart: View components not ready.");
+            return;
+        }
+
+        ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
+        ErrorDisplayView errorDisplay = panel.getErrorDisplayView();
+
+        if (errorDisplay == null) {
+             System.err.println("Cannot update chart: ErrorDisplayView not initialized.");
+             return;
+        }
+        errorDisplay.clearErrors(); // Clear previous errors
+
+        // Check if data is loaded
+        if (dataSet == null) {
+            System.err.println("Cannot update chart: No data loaded.");
+            mainView.getChartView().clearChart();
+            return;
+        }
+
+        // Validate selections
+        boolean valid = true;
+        if (type == null) {
+            System.err.println("Chart type is null.");
+            valid = false;
+        }
+        if (xCol == null) {
+            errorDisplay.showXAxisError("Please select a column for the X-Axis."); // Use ErrorDisplayView
+            valid = false;
+        }
+        if (yCol == null) {
+            errorDisplay.showYAxisError("Please select a column for the Y-Axis."); // Use ErrorDisplayView
+            valid = false;
+        }
+
+        // Only check for equality if both are selected
+        if (xCol != null && yCol != null && xCol.equals(yCol)) {
+            errorDisplay.showYAxisError("X and Y axes cannot be the same."); // Use ErrorDisplayView
+            valid = false;
+        }
+
+        if (!valid) {
+            mainView.getChartView().clearChart();
+            return;
+        }
+
+        // Validation passed, update the chart view
+        mainView.getChartView().updateChart(type, xCol, List.of(yCol));
+
+        // Reflect state back to panel
+        panel.reflectChartState(type, xCol, yCol);
+    }
+
+    /**
+     * Requests swapping of the X and Y axes selected in the panel.
+     */
+    public void requestAxisSwap() {
+         if (mainView == null || mainView.getColumnSelectionPanel() == null) {
+            System.err.println("Cannot swap axes: View components not ready.");
+            return;
+        }
+        ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
+        ErrorDisplayView errorDisplay = panel.getErrorDisplayView(); // Get the error display
+
+        if (errorDisplay == null) {
+             System.err.println("Cannot swap axes: ErrorDisplayView not initialized.");
+             return;
+        }
+        errorDisplay.clearErrors(); // Clear previous errors using ErrorDisplayView
+
+        String currentX = panel.getSelectedXAxisColumn();
+        String currentY = panel.getSelectedYAxisColumn();
+        ChartType currentType = panel.getSelectedChartType();
+
+        // Validate if both are selected
+        boolean valid = true;
+        if (currentX == null) {
+            errorDisplay.showXAxisError("Select both X and Y axes to swap."); // Use ErrorDisplayView
+            valid = false;
+        }
+        if (currentY == null) {
+            errorDisplay.showYAxisError("Select both X and Y axes to swap."); // Use ErrorDisplayView
+            valid = false;
+        }
+
+        if (!valid) {
+            return;
+        }
+
+        // Check if they are different before attempting swap logic
+        if (currentX.equals(currentY)) {
+             errorDisplay.showYAxisError("X and Y axes cannot be the same."); // Use ErrorDisplayView
+             return;
+        }
+
+        // Request update with swapped axes
+        requestChartUpdate(currentType, currentY, currentX);
     }
 }
