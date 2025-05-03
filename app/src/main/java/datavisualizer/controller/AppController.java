@@ -2,12 +2,11 @@ package datavisualizer.controller;
 
 import datavisualizer.model.dataset.DataSet;
 import datavisualizer.model.chart.ChartType;
+import datavisualizer.model.ChartStateModel; // Import the new model
 import datavisualizer.view.MainView;
 import datavisualizer.view.ColumnSelectionPanel;
 import datavisualizer.view.ErrorDisplayView;
 import datavisualizer.model.command.Command;
-import datavisualizer.model.command.ChangeChartTypeCommand;
-import datavisualizer.model.command.UpdateVisibleColumnsCommand;
 
 import javafx.stage.Stage;
 
@@ -27,13 +26,9 @@ public class AppController {
 
     private final CommandManager commandManager = new CommandManager();
     private final FileController fileController = new FileController();
+    private final ChartStateModel chartStateModel = new ChartStateModel(); // Add instance of the new model
 
-    // --- Chart State Fields ---
-    private ChartType currentChartType = ChartType.BAR; // Default
-    private String currentXColumn = null;
-    private List<String> currentYColumns = new ArrayList<>();
-    // --- End Chart State Fields ---
-
+    // --- Chart State Fields removed ---
 
     /**
      * Sets the primary stage of the application.
@@ -49,13 +44,10 @@ public class AppController {
      */
     public void openFile() {
         DataSet loadedDataSet = fileController.loadDataFile(primaryStage);
-
         if (loadedDataSet != null) {
             this.dataSet = loadedDataSet;
-            // Reset chart state when new data is loaded
-            this.currentChartType = ChartType.BAR; // Reset to default
-            this.currentXColumn = null;
-            this.currentYColumns.clear();
+            // Reset chart state using the model
+            chartStateModel.resetState();
             commandManager.clearHistory(); // Clear undo/redo
 
             if (mainView != null) {
@@ -65,11 +57,13 @@ public class AppController {
                 if (panel != null && !dataSet.getColumnNames().isEmpty()) {
                     String defaultX = dataSet.getColumnNames().get(0);
                     String defaultY = dataSet.getColumnNames().size() > 1 ? dataSet.getColumnNames().get(1) : defaultX;
-                    this.currentXColumn = defaultX; // Set initial controller state
-                    this.currentYColumns = List.of(defaultY);
-                    this.currentChartType = ChartType.BAR;
-                    panel.reflectChartState(this.currentChartType, this.currentXColumn, defaultY); // Update panel UI
-                    triggerChartViewUpdate(); // Trigger initial chart render
+
+                    // Update the model with initial defaults (optional, resetState might suffice)
+                    chartStateModel.updateState(ChartType.BAR, defaultX, defaultY);
+
+                    // Reflect the model's state in the panel
+                    panel.reflectChartState(chartStateModel.getChartType(), chartStateModel.getXColumn(), defaultY);
+                    triggerChartViewUpdate(); // Trigger initial chart render based on model state
                 }
             }
         } else {
@@ -82,10 +76,8 @@ public class AppController {
      */
     public void closeCurrentFile() {
         this.dataSet = null; // Clear the dataset
-        // Reset chart state
-        this.currentChartType = ChartType.BAR;
-        this.currentXColumn = null;
-        this.currentYColumns.clear();
+        // Reset chart state using the model
+        chartStateModel.resetState();
         commandManager.clearHistory();
 
         if (mainView != null) {
@@ -105,10 +97,11 @@ public class AppController {
      */
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
-        // Pass controller reference down if needed by views directly (try to avoid)
+        // Pass controller reference down if needed by views directly (try to avoid where possible)
          if (mainView != null) {
             if (mainView.getChartView() != null) {
-                 mainView.getChartView().setAppController(this); // ChartView still needs it for dataSet access
+                 // ChartView still needs controller for dataSet access, consider passing dataSet directly if possible
+                 mainView.getChartView().setAppController(this);
             }
             if (mainView.getColumnSelectionPanel() != null) {
                  mainView.getColumnSelectionPanel().setAppController(this); // Panel needs it for callbacks
@@ -143,49 +136,30 @@ public class AppController {
         return mainView;
     }
 
-    public ChartType getCurrentChartType() {
-        return currentChartType;
-    }
+    // --- Getters for chart state removed ---
 
-    public String getCurrentXColumn() {
-        return currentXColumn;
-    }
-
-    public List<String> getCurrentYColumns() {
-        // Return immutable copy to prevent external modification
-        return Collections.unmodifiableList(currentYColumns);
-    }
-
-   /**
-     * Updates the internal chart state. Called by Commands.
-     * Does not trigger UI update directly.
-     *
-     * @param type The new chart type.
-     * @param xCol The new X-axis column.
-     * @param yCol The new Y-axis column (single selection assumed for now).
-     */
-    public void updateChartState(ChartType type, String xCol, String yCol) {
-        this.currentChartType = type;
-        this.currentXColumn = xCol;
-        // Assuming single Y column selection from panel for now
-        this.currentYColumns = (yCol != null) ? new ArrayList<>(List.of(yCol)) : new ArrayList<>();
-    }
+    // --- updateChartState method removed ---
 
     /**
-     * Reads the current chart state from this controller and tells the ChartView to update.
-     * Should be called after the state is modified (e.g., by a command).
+     * Reads the current chart state from the ChartStateModel and tells the ChartView to update.
+     * Should be called after the state is modified (e.g., by a command or direct model update).
      */
     public void triggerChartViewUpdate() {
         if (mainView != null && mainView.getChartView() != null) {
-            // Pass the state stored in the controller to the view
-            mainView.getChartView().updateChart(this.currentChartType, this.currentXColumn, this.currentYColumns);
+            // Read state from the model
+            ChartType type = chartStateModel.getChartType();
+            String xCol = chartStateModel.getXColumn();
+            List<String> yCols = chartStateModel.getYColumns();
 
-             // Also update the selection panel UI to reflect the state
+            // Pass the state read from the model to the view
+            mainView.getChartView().updateChart(type, xCol, yCols);
+
+             // Also update the selection panel UI to reflect the model's state
              ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
              if(panel != null) {
-                 // Assuming single Y column for reflectChartState
-                 String yCol = this.currentYColumns.isEmpty() ? null : this.currentYColumns.get(0);
-                 panel.reflectChartState(this.currentChartType, this.currentXColumn, yCol);
+                 // Assuming single Y column for reflectChartState for now
+                 String yColSingle = yCols.isEmpty() ? null : yCols.get(0);
+                 panel.reflectChartState(type, xCol, yColSingle);
              }
         } else {
              System.err.println("Cannot trigger chart view update: MainView or ChartView is null.");
@@ -195,7 +169,7 @@ public class AppController {
 
     /**
      * Requests an update to the chart based on selections from the panel.
-     * Performs validation and executes a command to change the state.
+     * Performs validation and executes a command to change the state in the ChartStateModel.
      *
      * @param requestedType The selected chart type from the panel.
      * @param requestedXCol The selected X-axis column from the panel.
@@ -214,9 +188,9 @@ public class AppController {
              return;
         }
         errorDisplay.clearErrors();
+
         if (dataSet == null) {
             System.err.println("Cannot update chart: No data loaded.");
-            // No need to clear chart here, state change will handle it if needed
             return;
         }
         boolean valid = true;
@@ -227,59 +201,55 @@ public class AppController {
             errorDisplay.showYAxisError("X and Y axes cannot be the same."); valid = false;
         }
         if (!valid) {
-            // If validation fails, maybe revert panel selections to controller's current state?
-            // panel.reflectChartState(this.currentChartType, this.currentXColumn, this.currentYColumns.isEmpty() ? null : this.currentYColumns.get(0));
-            // Or just clear the chart if that's preferred
+             // Clear chart or revert panel if validation fails
              if (mainView.getChartView() != null) mainView.getChartView().clearChart();
+             // Optionally revert panel state
+             // panel.reflectChartState(chartStateModel.getChartType(), chartStateModel.getXColumn(), chartStateModel.getYColumns().isEmpty() ? null : chartStateModel.getYColumns().get(0));
             return;
         }
         // --- End Validation ---
 
         // --- Create and Execute Command ---
-        // Get previous state from the controller itself
-        ChartType previousType = this.currentChartType;
-        String previousX = this.currentXColumn;
-        List<String> previousY = new ArrayList<>(this.currentYColumns); // Copy
+        // Get previous state from the ChartStateModel
+        ChartType previousType = chartStateModel.getChartType();
+        String previousX = chartStateModel.getXColumn();
+        List<String> previousY = chartStateModel.getYColumns(); // Already immutable
 
         // Assuming single Y column selection for simplicity in command creation
-        List<String> requestedYList = List.of(requestedYCol);
+        List<String> requestedYList = (requestedYCol != null) ? List.of(requestedYCol) : Collections.emptyList();
 
-        // Check if state actually changed
+        // Check if state actually changed (optional, command could be idempotent)
         if (!Objects.equals(previousType, requestedType) || !Objects.equals(previousX, requestedXCol) || !previousY.equals(requestedYList)) {
-            // Create a command that operates on the AppController state
-            // We might need a more general "UpdateChartStateCommand"
-            // For now, let's adapt ChangeChartTypeCommand conceptually (needs refactoring)
-
-            // Example using a hypothetical combined command:
+             // Create a command that operates on the ChartStateModel
              Command updateCmd = new UpdateChartStateCommand(
-                 this, // Pass controller
+                 chartStateModel, // Pass the model
+                 this, // Pass controller for triggering view update
                  previousType, previousX, previousY, // Previous state
                  requestedType, requestedXCol, requestedYList // New state
              );
-
             // Execute the command. The command's execute() will call
-            // appController.updateChartState(...) and appController.triggerChartViewUpdate().
+            // chartStateModel.updateState(...) and controller.triggerChartViewUpdate().
             commandManager.executeCommand(updateCmd);
         }
         // --- End Command Execution ---
     }
 
-
     /**
      * Requests swapping of the X and Y axes selected in the panel.
      */
     public void requestAxisSwap() {
-        // --- Validation --- (Remains mostly the same)
-         if (mainView == null || mainView.getColumnSelectionPanel() == null) { /*...*/ return; }
+        // --- Validation ---
+         if (mainView == null || mainView.getColumnSelectionPanel() == null) { System.err.println("Cannot swap axes: View components not ready."); return; }
         ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
         ErrorDisplayView errorDisplay = panel.getErrorDisplayView();
-        if (errorDisplay == null) { /*...*/ return; }
+        if (errorDisplay == null) { System.err.println("Cannot swap axes: ErrorDisplayView not initialized."); return; }
         errorDisplay.clearErrors();
 
         // Get selections *from the panel* as the user's intent
         String panelX = panel.getSelectedXAxisColumn();
         String panelY = panel.getSelectedYAxisColumn();
-        ChartType panelType = panel.getSelectedChartType(); // Keep current type
+        // Get current type from the model, not the panel, as swap shouldn't change type
+        ChartType currentType = chartStateModel.getChartType();
 
         boolean valid = true;
         if (panelX == null) { errorDisplay.showXAxisError("Select both X and Y axes to swap."); valid = false; }
@@ -288,39 +258,43 @@ public class AppController {
         if (panelX.equals(panelY)) { errorDisplay.showYAxisError("X and Y axes cannot be the same."); return; }
         // --- End Validation ---
 
-        // Request an update using the validated panel selections, but swapped
+        // Request an update using the validated panel selections, but swapped, keeping current type
         // This will go through the command creation process in requestChartUpdate
-        requestChartUpdate(panelType, panelY, panelX);
+        requestChartUpdate(currentType, panelY, panelX);
     }
 
-    // --- Hypothetical Command (Needs to be created) ---
-    // This replaces ChangeChartTypeCommand and UpdateVisibleColumnsCommand
+
+    // --- Command Implementation (Now operates on ChartStateModel) ---
     private static class UpdateChartStateCommand implements Command {
-        private final AppController controller;
+        private final ChartStateModel model; // Reference to the model
+        private final AppController controller; // Reference to controller to trigger view updates
         private final ChartType prevType, newType;
         private final String prevX, newX;
         private final List<String> prevY, newY;
 
-        public UpdateChartStateCommand(AppController controller,
+        public UpdateChartStateCommand(ChartStateModel model, AppController controller,
                                        ChartType prevType, String prevX, List<String> prevY,
                                        ChartType newType, String newX, List<String> newY) {
+            this.model = model;
             this.controller = controller;
-            this.prevType = prevType; this.prevX = prevX; this.prevY = new ArrayList<>(prevY);
-            this.newType = newType; this.newX = newX; this.newY = new ArrayList<>(newY);
+            this.prevType = prevType; this.prevX = prevX; this.prevY = new ArrayList<>(prevY); // Store copy
+            this.newType = newType; this.newX = newX; this.newY = new ArrayList<>(newY); // Store copy
         }
 
         @Override
         public void execute() {
-            // Assuming single Y for updateChartState for now
-            controller.updateChartState(newType, newX, newY.isEmpty() ? null : newY.get(0));
-            controller.triggerChartViewUpdate(); // Tell controller to refresh the view
+            // Update the model state
+            model.updateState(newType, newX, newY);
+            // Tell controller to refresh the view based on the *new* model state
+            controller.triggerChartViewUpdate();
         }
 
         @Override
         public void undo() {
-             // Assuming single Y for updateChartState for now
-            controller.updateChartState(prevType, prevX, prevY.isEmpty() ? null : prevY.get(0));
-            controller.triggerChartViewUpdate(); // Tell controller to refresh the view
+             // Revert the model state
+            model.updateState(prevType, prevX, prevY);
+            // Tell controller to refresh the view based on the *reverted* model state
+            controller.triggerChartViewUpdate();
         }
     }
 }
