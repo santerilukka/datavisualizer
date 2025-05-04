@@ -1,19 +1,20 @@
 package datavisualizer.model;
 
 import datavisualizer.model.chart.ChartType;
+import datavisualizer.model.dataset.DataSet; // Added import
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Model class to hold the current state of the chart configuration.
+ * Model class to hold the current state of the chart configuration and data.
  */
 public class ChartStateModel {
-
     private ChartType chartType = ChartType.BAR; // Default chart type
     private String xColumn = null;
     private List<String> yColumns = new ArrayList<>();
+    private DataSet currentDataSet = null; // Added field for DataSet
 
     private final List<ChartStateObserver> observers = new ArrayList<>();
 
@@ -46,6 +47,29 @@ public class ChartStateModel {
     }
 
     /**
+     * Gets the current DataSet.
+     *
+     * @return The current DataSet, or null if none is loaded.
+     */
+    public DataSet getDataSet() { // Added getter for DataSet
+        return currentDataSet;
+    }
+
+    /**
+     * Sets the current DataSet.
+     * Usually called when a new file is loaded.
+     * Does not notify observers by itself; typically followed by a state update.
+     *
+     * @param dataSet The new DataSet, or null to clear.
+     */
+    public void setDataSet(DataSet dataSet) { // Added setter for DataSet
+        this.currentDataSet = dataSet;
+        // Optionally notify observers if DataSet change itself should trigger updates
+        // notifyObservers();
+    }
+
+
+    /**
      * Updates the chart state.
      *
      * @param type The new chart type.
@@ -74,16 +98,17 @@ public class ChartStateModel {
         notifyObservers();
     }
 
-
     /**
-     * Resets the chart state to default values.
+     * Resets the chart state and data to default values.
      */
     public void resetState() {
         this.chartType = ChartType.BAR;
         this.xColumn = null;
         this.yColumns.clear();
-        // TODO: Notify observers if implemented
+        this.currentDataSet = null; // Clear DataSet reference
+        notifyObservers(); // Notify observers about the reset
     }
+
 
     public void addObserver(ChartStateObserver observer) {
         if (observer != null && !observers.contains(observer)) {

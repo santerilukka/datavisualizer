@@ -11,7 +11,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 
-import datavisualizer.controller.AppController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,12 +21,10 @@ import java.util.List;
  */
 public class ChartView {
     private BorderPane chartContainer;
-    private Chart currentChart;
     private String currentXColumn;
     private List<String> currentYColumns = new ArrayList<>();
     private ChartType currentChartType;
 
-    private AppController appController;
     private Node selectionPromptNode;
 
     public ChartView() {
@@ -47,30 +44,28 @@ public class ChartView {
      * @param xColumn   The column to use for the X-axis.
      * @param yColumns  The columns to use for the Y-axis.
      */
-    public void updateChart(ChartType chartType, String xColumn, List<String> yColumns) {
-        // Check if essential components are available (controller for data)
-        if (appController == null || appController.getDataSet() == null) {
-            System.err.println("ChartView: Cannot update chart: AppController or DataSet is null.");
+    public void updateChart(DataSet dataSet, ChartType chartType, String xColumn, List<String> yColumns) {
+        // Check if essential components are available
+        if (dataSet == null) {
+            System.err.println("ChartView: Cannot update chart: DataSet is null.");
             clearChart();
             return;
         }
-        DataSet dataSet = appController.getDataSet();
 
         // Check if columns are provided (basic check, controller should validate more)
         if (xColumn == null || yColumns == null /* Allow empty yColumns for some chart types? */ ) {
-             System.err.println("ChartView: Cannot update chart: Columns not specified.");
-             clearChart();
-            return;
+            System.err.println("ChartView: Cannot update chart: Columns not specified.");
+            clearChart();
+        return;
         }
 
-        // Attempt to create the chart using the provided state
+        // Attempt to create the chart using the provided state and dataSet
         Chart newChart = ChartFactory.createChart(chartType, dataSet, xColumn, yColumns);
 
         if (newChart != null) {
             // Chart created successfully, display it
             chartContainer.setCenter(newChart);
             // Update internal fields mainly for getter consistency if needed
-            this.currentChart = newChart;
             this.currentXColumn = xColumn;
             this.currentYColumns = new ArrayList<>(yColumns); // Store a mutable copy
             this.currentChartType = chartType;
@@ -84,15 +79,11 @@ public class ChartView {
     public void clearChart() {
         chartContainer.setCenter(selectionPromptNode);
         // Clear internal tracking fields
-        currentChart = null;
         currentXColumn = null;
         currentYColumns.clear();
         currentChartType = null;
     }
 
-    public void setAppController(AppController appController) {
-        this.appController = appController;
-    }
 
     public ChartType getCurrentChartType() { return currentChartType; }
     public String getCurrentXColumn() { return currentXColumn; }

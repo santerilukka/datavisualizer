@@ -4,7 +4,6 @@ import datavisualizer.model.ChartStateModel;
 import datavisualizer.model.chart.ChartType;
 
 import java.util.List;
-import java.util.ArrayList; // Import ArrayList
 
 /**
  * Command to update the state of the ChartStateModel.

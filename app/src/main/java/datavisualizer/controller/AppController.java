@@ -14,7 +14,6 @@ import javafx.stage.Stage;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.ArrayList;
 import java.util.Collections;
 
 /**
@@ -23,12 +22,12 @@ import java.util.Collections;
  */
 public class AppController implements ChartStateObserver {
     private MainView mainView;
-    private DataSet dataSet;
+    // private DataSet dataSet; // Removed DataSet field from Controller
     private Stage primaryStage;
 
     private final CommandManager commandManager = new CommandManager();
     private final FileController fileController = new FileController();
-    private final ChartStateModel chartStateModel = new ChartStateModel();
+    private final ChartStateModel chartStateModel = new ChartStateModel(); // Model holds state and data
 
     public AppController() {
         chartStateModel.addObserver(this); // Register as observer
@@ -49,29 +48,34 @@ public class AppController implements ChartStateObserver {
     public void openFile() {
         DataSet loadedDataSet = fileController.loadDataFile(primaryStage);
         if (loadedDataSet != null) {
-            this.dataSet = loadedDataSet;
-            // Reset chart state using the model
-            chartStateModel.resetState();
+            // this.dataSet = loadedDataSet; // Removed setting local field
+            chartStateModel.setDataSet(loadedDataSet); // Set DataSet in the model
+            // Reset chart state using the model (which also clears previous data ref)
+            chartStateModel.resetState(); // Reset config, keep new data
+            chartStateModel.setDataSet(loadedDataSet); // Re-set DataSet after resetState clears it
             commandManager.clearHistory(); // Clear undo/redo
 
             if (mainView != null) {
-                mainView.displayDataSet(this.dataSet);
+                mainView.displayDataSet(loadedDataSet); // Pass loaded data to view for initial setup
                 // Set initial state in panel after populating
                 ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
-                if (panel != null && !dataSet.getColumnNames().isEmpty()) {
-                    String defaultX = dataSet.getColumnNames().get(0);
-                    String defaultY = dataSet.getColumnNames().size() > 1 ? dataSet.getColumnNames().get(1) : defaultX;
-
-                    // Update the model with initial defaults (optional, resetState might suffice)
+                if (panel != null && !loadedDataSet.getColumnNames().isEmpty()) {
+                    String defaultX = loadedDataSet.getColumnNames().get(0);
+                    String defaultY = loadedDataSet.getColumnNames().size() > 1 ? loadedDataSet.getColumnNames().get(1) : defaultX;
+                    // Update the model with initial defaults
                     chartStateModel.updateState(ChartType.BAR, defaultX, defaultY);
-
                     // Reflect the model's state in the panel
                     panel.reflectChartState(chartStateModel.getChartType(), chartStateModel.getXColumn(), defaultY);
-                    triggerChartViewUpdate(); // Trigger initial chart render based on model state
+                    // triggerChartViewUpdate(); // Triggered by model updateState via observer
                 }
             }
         } else {
             System.err.println("Failed to load data file or operation cancelled.");
+            // Ensure model's dataset is null if loading failed
+            if (chartStateModel.getDataSet() != null) {
+                 chartStateModel.setDataSet(null);
+                 chartStateModel.resetState(); // Also reset config state
+            }
         }
     }
 
@@ -79,9 +83,8 @@ public class AppController implements ChartStateObserver {
      * Closes the currently open file, clearing the dataset and resetting the view.
      */
     public void closeCurrentFile() {
-        this.dataSet = null; // Clear the dataset
-        // Reset chart state using the model
-        chartStateModel.resetState();
+        // Reset chart state and data using the model
+        chartStateModel.resetState(); // This now also clears the DataSet in the model
         commandManager.clearHistory();
 
         if (mainView != null) {
@@ -101,14 +104,9 @@ public class AppController implements ChartStateObserver {
      */
     public void setMainView(MainView mainView) {
         this.mainView = mainView;
-        // Pass controller reference down if needed by views directly (try to avoid where possible)
          if (mainView != null) {
-            if (mainView.getChartView() != null) {
-                 // ChartView still needs controller for dataSet access, consider passing dataSet directly if possible
-                 mainView.getChartView().setAppController(this);
-            }
             if (mainView.getColumnSelectionPanel() != null) {
-                 mainView.getColumnSelectionPanel().setAppController(this); // Panel needs it for callbacks
+                 mainView.getColumnSelectionPanel().setAppController(this);
             }
         }
     }
@@ -128,12 +126,12 @@ public class AppController implements ChartStateObserver {
     }
 
     /**
-     * Gets the current dataset.
+     * Gets the current dataset from the model.
      *
      * @return The current dataset.
      */
     public DataSet getDataSet() {
-        return dataSet;
+        return chartStateModel.getDataSet(); // Get DataSet from the model
     }
 
     /**
@@ -145,12 +143,9 @@ public class AppController implements ChartStateObserver {
         return mainView;
     }
 
-    // --- Getters for chart state removed ---
-
-    // --- updateChartState method removed ---
 
     /**
-     * Reads the current chart state from the ChartStateModel and tells the ChartView to update.
+     * Reads the current chart state and data from the ChartStateModel and tells the ChartView to update.
      * Should be called after the state is modified (e.g., by a command or direct model update).
      */
     public void triggerChartViewUpdate() {
@@ -159,9 +154,11 @@ public class AppController implements ChartStateObserver {
             ChartType type = chartStateModel.getChartType();
             String xCol = chartStateModel.getXColumn();
             List<String> yCols = chartStateModel.getYColumns();
+            // Get the current DataSet from the model
+            DataSet currentDataSet = chartStateModel.getDataSet(); // Use the model's dataSet field
 
-            // Pass the state read from the model to the view
-            mainView.getChartView().updateChart(type, xCol, yCols);
+            // Pass the state AND the DataSet read from the model to the view
+            mainView.getChartView().updateChart(currentDataSet, type, xCol, yCols);
 
              // Also update the selection panel UI to reflect the model's state
              ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
@@ -197,8 +194,7 @@ public class AppController implements ChartStateObserver {
              return;
         }
         errorDisplay.clearErrors();
-
-        if (dataSet == null) {
+        if (chartStateModel.getDataSet() == null) { // Check DataSet in the model
             System.err.println("Cannot update chart: No data loaded.");
             return;
         }
@@ -223,7 +219,6 @@ public class AppController implements ChartStateObserver {
         ChartType previousType = chartStateModel.getChartType();
         String previousX = chartStateModel.getXColumn();
         List<String> previousY = chartStateModel.getYColumns(); // Already immutable
-
         // Assuming single Y column selection for simplicity in command creation
         List<String> requestedYList = (requestedYCol != null) ? List.of(requestedYCol) : Collections.emptyList();
 
@@ -235,8 +230,7 @@ public class AppController implements ChartStateObserver {
                  previousType, previousX, previousY, // Previous state
                  requestedType, requestedXCol, requestedYList // New state
              );
-            // Execute the command. The command's execute() will call
-            // chartStateModel.updateState(...) and controller.triggerChartViewUpdate().
+            // Execute the command
             commandManager.executeCommand(updateCmd);
         }
         // --- End Command Execution ---
@@ -248,6 +242,12 @@ public class AppController implements ChartStateObserver {
     public void requestAxisSwap() {
         // --- Validation ---
          if (mainView == null || mainView.getColumnSelectionPanel() == null) { System.err.println("Cannot swap axes: View components not ready."); return; }
+        // Check if data is loaded via the model
+        if (chartStateModel.getDataSet() == null) {
+            System.err.println("Cannot swap axes: No data loaded.");
+            return;
+        }
+
         ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
         ErrorDisplayView errorDisplay = panel.getErrorDisplayView();
         if (errorDisplay == null) { System.err.println("Cannot swap axes: ErrorDisplayView not initialized."); return; }

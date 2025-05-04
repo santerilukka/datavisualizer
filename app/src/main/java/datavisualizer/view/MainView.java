@@ -1,4 +1,3 @@
-// DataVisualizerFX/src/main/java/datavisualizerfx/view/MainView.java
 package datavisualizer.view;
 
 import datavisualizer.controller.AppController;
@@ -31,7 +30,6 @@ public class MainView {
 
     private ChartView chartView;
     private AppController appController;
-    private DataSet currentDataSet; // To hold the currently loaded dataset
     private VBox startScreen;
 
     /**
@@ -61,9 +59,8 @@ public class MainView {
      */
     public void setAppController(AppController appController) {
         this.appController = appController;
-        chartView.setAppController(appController); // Pass controller to chart view
         if (columnSelectionPanelController != null) {
-            columnSelectionPanelController.setAppController(appController); // Pass controller to column selection
+            columnSelectionPanelController.setAppController(appController);
         }
     }
 
@@ -147,7 +144,6 @@ public class MainView {
      * @param dataSet The dataset to display.
      */
     public void displayDataSet(DataSet dataSet) {
-        this.currentDataSet = dataSet;
         if (dataSet != null) {
             // Data loaded successfully, show the chart view
             mainPane.setCenter(chartView.getChartContainer()); // Switch center to chart view
