@@ -2,6 +2,7 @@ package datavisualizer.view;
 
 import datavisualizer.controller.AppController;
 import datavisualizer.model.dataset.DataSet;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -18,15 +19,9 @@ import java.util.List;
  */
 public class MainView {
 
-    @FXML
-    private BorderPane mainPane;
-    // Inject the root node of the included FXML
-    @FXML
-    private VBox columnSelectionPanel;
-
-    // Inject the controller of the included FXML
-    @FXML
-    private ColumnSelectionPanel columnSelectionPanelController;
+    @FXML private BorderPane mainPane;
+    @FXML private VBox columnSelectionPanel;
+    @FXML private ColumnSelectionPanel columnSelectionPanelController;
 
     private ChartView chartView;
     private AppController appController;

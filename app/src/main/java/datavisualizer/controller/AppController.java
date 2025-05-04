@@ -22,7 +22,6 @@ import java.util.Collections;
  */
 public class AppController implements ChartStateObserver {
     private MainView mainView;
-    // private DataSet dataSet; // Removed DataSet field from Controller
     private Stage primaryStage;
 
     private final CommandManager commandManager = new CommandManager();
@@ -116,38 +115,18 @@ public class AppController implements ChartStateObserver {
         triggerChartViewUpdate();
     }
 
-    /**
-     * Gets the command manager instance.
-     *
-     * @return The command manager.
-     */
     public CommandManager getCommandManager() {
         return commandManager;
     }
 
-    /**
-     * Gets the current dataset from the model.
-     *
-     * @return The current dataset.
-     */
     public DataSet getDataSet() {
         return chartStateModel.getDataSet(); // Get DataSet from the model
     }
 
-    /**
-     * Gets the main view instance.
-     *
-     * @return The main view.
-     */
     public MainView getMainView() {
         return mainView;
     }
 
-
-    /**
-     * Reads the current chart state and data from the ChartStateModel and tells the ChartView to update.
-     * Should be called after the state is modified (e.g., by a command or direct model update).
-     */
     public void triggerChartViewUpdate() {
         if (mainView != null && mainView.getChartView() != null) {
             // Read state from the model
@@ -160,13 +139,13 @@ public class AppController implements ChartStateObserver {
             // Pass the state AND the DataSet read from the model to the view
             mainView.getChartView().updateChart(currentDataSet, type, xCol, yCols);
 
-             // Also update the selection panel UI to reflect the model's state
-             ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
-             if(panel != null) {
-                 // Assuming single Y column for reflectChartState for now
-                 String yColSingle = yCols.isEmpty() ? null : yCols.get(0);
-                 panel.reflectChartState(type, xCol, yColSingle);
-             }
+            // Also update the selection panel UI to reflect the model's state
+            ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
+            if(panel != null) {
+                // Assuming single Y column for reflectChartState for now
+                String yColSingle = yCols.isEmpty() ? null : yCols.get(0);
+                panel.reflectChartState(type, xCol, yColSingle);
+            }
         } else {
              System.err.println("Cannot trigger chart view update: MainView or ChartView is null.");
         }
@@ -182,8 +161,8 @@ public class AppController implements ChartStateObserver {
      * @param requestedYCol The selected Y-axis column from the panel.
      */
     public void requestChartUpdate(ChartType requestedType, String requestedXCol, String requestedYCol) {
-        // --- Validation ---
-        if (mainView == null || mainView.getChartView() == null || mainView.getColumnSelectionPanel() == null) {
+        // --- Pre-checks ---
+        if (mainView == null || mainView.getColumnSelectionPanel() == null) {
             System.err.println("Cannot update chart: View components not ready.");
             return;
         }
@@ -193,32 +172,24 @@ public class AppController implements ChartStateObserver {
              System.err.println("Cannot update chart: ErrorDisplayView not initialized.");
              return;
         }
-        errorDisplay.clearErrors();
-        if (chartStateModel.getDataSet() == null) { // Check DataSet in the model
-            System.err.println("Cannot update chart: No data loaded.");
-            return;
-        }
-        boolean valid = true;
-        if (requestedType == null) { valid = false; /* Log error if needed */ }
-        if (requestedXCol == null) { errorDisplay.showXAxisError("Please select a column for the X-Axis."); valid = false; }
-        if (requestedYCol == null) { errorDisplay.showYAxisError("Please select a column for the Y-Axis."); valid = false; }
-        if (requestedXCol != null && requestedYCol != null && requestedXCol.equals(requestedYCol)) {
-            errorDisplay.showYAxisError("X and Y axes cannot be the same."); valid = false;
-        }
-        if (!valid) {
+
+        // --- Validation ---
+        ChartStateValidator validator = new ChartStateValidator(chartStateModel.getDataSet(), errorDisplay);
+        if (!validator.validateUpdateRequest(requestedType, requestedXCol, requestedYCol)) {
              // Clear chart or revert panel if validation fails
              if (mainView.getChartView() != null) mainView.getChartView().clearChart();
-             // Optionally revert panel state
-             // panel.reflectChartState(chartStateModel.getChartType(), chartStateModel.getXColumn(), chartStateModel.getYColumns().isEmpty() ? null : chartStateModel.getYColumns().get(0));
+             // Optionally revert panel state here if desired
             return;
         }
         // --- End Validation ---
+
 
         // --- Create and Execute Command ---
         // Get previous state from the ChartStateModel
         ChartType previousType = chartStateModel.getChartType();
         String previousX = chartStateModel.getXColumn();
         List<String> previousY = chartStateModel.getYColumns(); // Already immutable
+
         // Assuming single Y column selection for simplicity in command creation
         List<String> requestedYList = (requestedYCol != null) ? List.of(requestedYCol) : Collections.emptyList();
 
@@ -232,42 +203,44 @@ public class AppController implements ChartStateObserver {
              );
             // Execute the command
             commandManager.executeCommand(updateCmd);
+            // View update is triggered by the observer pattern via chartStateChanged -> triggerChartViewUpdate
         }
         // --- End Command Execution ---
     }
+
 
     /**
      * Requests swapping of the X and Y axes selected in the panel.
      */
     public void requestAxisSwap() {
-        // --- Validation ---
-         if (mainView == null || mainView.getColumnSelectionPanel() == null) { System.err.println("Cannot swap axes: View components not ready."); return; }
-        // Check if data is loaded via the model
-        if (chartStateModel.getDataSet() == null) {
-            System.err.println("Cannot swap axes: No data loaded.");
-            return;
-        }
-
+        // --- Pre-checks ---
+         if (mainView == null || mainView.getColumnSelectionPanel() == null) {
+             System.err.println("Cannot swap axes: View components not ready.");
+             return;
+         }
         ColumnSelectionPanel panel = mainView.getColumnSelectionPanel();
         ErrorDisplayView errorDisplay = panel.getErrorDisplayView();
-        if (errorDisplay == null) { System.err.println("Cannot swap axes: ErrorDisplayView not initialized."); return; }
-        errorDisplay.clearErrors();
+        if (errorDisplay == null) {
+            System.err.println("Cannot swap axes: ErrorDisplayView not initialized.");
+            return;
+        }
 
         // Get selections *from the panel* as the user's intent
         String panelX = panel.getSelectedXAxisColumn();
         String panelY = panel.getSelectedYAxisColumn();
+
+        // --- Validation ---
+        ChartStateValidator validator = new ChartStateValidator(chartStateModel.getDataSet(), errorDisplay);
+        if (!validator.validateSwapRequest(panelX, panelY)) {
+            return; // Errors displayed by validator
+        }
+        // --- End Validation ---
+
         // Get current type from the model, not the panel, as swap shouldn't change type
         ChartType currentType = chartStateModel.getChartType();
 
-        boolean valid = true;
-        if (panelX == null) { errorDisplay.showXAxisError("Select both X and Y axes to swap."); valid = false; }
-        if (panelY == null) { errorDisplay.showYAxisError("Select both X and Y axes to swap."); valid = false; }
-        if (!valid) { return; }
-        if (panelX.equals(panelY)) { errorDisplay.showYAxisError("X and Y axes cannot be the same."); return; }
-        // --- End Validation ---
-
         // Request an update using the validated panel selections, but swapped, keeping current type
         // This will go through the command creation process in requestChartUpdate
-        requestChartUpdate(currentType, panelY, panelX);
+        requestChartUpdate(currentType, panelY, panelX); // Pass swapped axes
     }
 }
