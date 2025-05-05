@@ -1,7 +1,7 @@
 package datavisualizer.model;
 
 import datavisualizer.model.chart.ChartType;
-import datavisualizer.model.dataset.DataSet; // Added import
+import datavisualizer.model.dataset.DataSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,7 +14,7 @@ public class ChartStateModel {
     private ChartType chartType = ChartType.BAR; // Default chart type
     private String xColumn = null;
     private List<String> yColumns = new ArrayList<>();
-    private DataSet currentDataSet = null; // Added field for DataSet
+    private DataSet currentDataSet = null;
 
     private final List<ChartStateObserver> observers = new ArrayList<>();
 
@@ -64,8 +64,6 @@ public class ChartStateModel {
      */
     public void setDataSet(DataSet dataSet) { // Added setter for DataSet
         this.currentDataSet = dataSet;
-        // Optionally notify observers if DataSet change itself should trigger updates
-        // notifyObservers();
     }
 
 
@@ -81,7 +79,7 @@ public class ChartStateModel {
         this.chartType = (type != null) ? type : ChartType.BAR; // Default if null
         this.xColumn = xCol;
         this.yColumns = (yCol != null) ? new ArrayList<>(List.of(yCol)) : new ArrayList<>();
-        notifyObservers(); // Add this call
+        notifyObservers();
     }
 
      /**

@@ -3,6 +3,7 @@ package datavisualizer.view;
 import datavisualizer.controller.AppController;
 import datavisualizer.model.chart.ChartType;
 import datavisualizer.model.dataset.DataSet;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
@@ -14,20 +15,13 @@ import java.util.List;
  */
 public class ColumnSelectionPanel {
 
-    @FXML
-    private VBox selectionPanel; // The root VBox defined in FXML
-    @FXML
-    private ComboBox<String> xAxisComboBox;
-    @FXML
-    private ComboBox<String> yAxisComboBox;
-    @FXML
-    private ComboBox<ChartType> chartTypeComboBox;
-    @FXML
-    private Label xAxisErrorLabel; // Injected error label for X-Axis
-    @FXML
-    private Label yAxisErrorLabel; // Injected error label for Y-Axis
-    @FXML
-    private Button swapAxesButton; // Button to swap axes
+    @FXML private VBox selectionPanel; // The root VBox defined in FXML
+    @FXML private ComboBox<String> xAxisComboBox;// Axis selection controls
+    @FXML private ComboBox<String> yAxisComboBox;
+    @FXML private ComboBox<ChartType> chartTypeComboBox;
+    @FXML private Label xAxisErrorLabel; // Error labels
+    @FXML private Label yAxisErrorLabel;
+    @FXML private Button swapAxesButton; // Button to swap axes
 
     private AppController appController;
     private ChartView chartView; // Reference to the ChartView

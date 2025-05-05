@@ -20,19 +20,29 @@ import java.util.List;
  * This will contain a JavaFX Chart object.
  */
 public class ChartView {
-    private BorderPane chartContainer;
+    private BorderPane chartContainer; // The main container for the chart
     private String currentXColumn;
     private List<String> currentYColumns = new ArrayList<>();
     private ChartType currentChartType;
 
-    private Node selectionPromptNode;
+    private Node selectionPromptNode; // The UI displayed initially, prompting the user to select chart options
 
+    /**
+     * Constructs a new ChartView.
+     * Initializes the chart container and the selection prompt node.
+     * Sets the initial state to show the prompt.
+     */
     public ChartView() {
         chartContainer = new BorderPane();
         selectionPromptNode = createSelectionPromptNode();
         clearChart();
     }
 
+    /**
+     * Gets the main BorderPane container used for displaying the chart or prompt.
+     *
+     * @return The BorderPane chart container.
+     */
     public BorderPane getChartContainer() {
         return chartContainer;
     }
@@ -76,6 +86,9 @@ public class ChartView {
         }
     }
 
+    /**
+     * Clears the current chart from the display and shows the initial selection prompt.
+     */
     public void clearChart() {
         chartContainer.setCenter(selectionPromptNode);
         // Clear internal tracking fields
@@ -85,10 +98,18 @@ public class ChartView {
     }
 
 
+    // Getters
     public ChartType getCurrentChartType() { return currentChartType; }
     public String getCurrentXColumn() { return currentXColumn; }
     public List<String> getCurrentYColumns() { return List.copyOf(currentYColumns); }
 
+
+    /**
+     * Creates the UI node (a VBox with labels) that prompts the user to select chart options.
+     * This is displayed when the application starts or when the data/chart is cleared.
+     *
+     * @return The Node representing the selection prompt.
+     */
     private Node createSelectionPromptNode() {
         VBox promptBox = new VBox(10);
         promptBox.setAlignment(Pos.CENTER);
