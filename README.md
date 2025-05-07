@@ -2,6 +2,18 @@
 
 DataVisualizer is a JavaFX-based desktop application developed as part of the **DTEK2074** university course. The application allows users to load and visualize data from CSV and JSON files interactively. Users can select which columns to display, switch between different chart types, and undo/redo their actions. The project emphasizes clean architecture and the use of design patterns to ensure maintainability and extensibility.
 
+## Table of Contents
+
+1. [Introduction](#introduction)
+2. [Features](#features)
+3. [Architecture](#architecture)
+4. [Design Patterns](#design-patterns)
+5. [Learning Objectives](#learning-objectives)
+6. [How to Run](#how-to-run)
+7. [Example Images](#example-images)
+8. [Future Extensions](#future-extensions)
+9. [Acknowledgements](#acknowledgements)
+
 ---
 
 ## Features
